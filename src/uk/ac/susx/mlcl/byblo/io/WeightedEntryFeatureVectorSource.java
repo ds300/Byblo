@@ -40,6 +40,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
+import uk.ac.susx.mlcl.lib.io.Weighted;
 
 /**
  * Wraps a {@link WeightedEntryFeatureSource} to produce complete feature 
@@ -52,7 +53,7 @@ public class WeightedEntryFeatureVectorSource
 
     private final WeightedEntryFeatureSource inner;
 
-    private WeightedEntryFeatureRecord next;
+    private Weighted<EntryFeatureRecord> next;
 
     private Lexer.Tell tell;
 
@@ -84,19 +85,19 @@ public class WeightedEntryFeatureVectorSource
         if (next == null)
             readNext();
         Int2DoubleMap features = new Int2DoubleOpenHashMap();
-        WeightedEntryFeatureRecord start = next;
+        Weighted<EntryFeatureRecord> start = next;
         int cardinality = 0;
         do {
-            features.put(next.getFeatureId(), next.getWeight());
-            cardinality = Math.max(cardinality, next.getFeatureId() + 1);
+            features.put(next.get().getFeatureId(), next.getWeight());
+            cardinality = Math.max(cardinality, next.get().getFeatureId() + 1);
             // XXX position() should not need to be called every iteration
             tell = inner.position();
             readNext();
-        } while (next != null && next.getEntryId() == start.getEntryId());
+        } while (next != null && next.get().getEntryId() == start.get().getEntryId());
 
 
         return new Entry<SparseDoubleVector>(
-                start.getEntryId(),
+                start.get().getEntryId(),
                 SparseVectors.toDoubleVector(features, cardinality));
     }
 

@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import uk.ac.susx.mlcl.lib.io.Weighted;
 
 /**
  * A <tt>WeightedEntryFeatureSource</tt> object is used to retrieve
@@ -47,8 +48,8 @@ import java.nio.charset.Charset;
  * @see WeightedEntryFeatureSink
  */
 public class WeightedEntryFeatureSource
-        extends AbstractTSVSource<WeightedEntryFeatureRecord>
-        implements Source<WeightedEntryFeatureRecord> {
+        extends AbstractTSVSource<Weighted<EntryFeatureRecord>>
+        implements Source<Weighted<EntryFeatureRecord>> {
 
     private final ObjectIndex<String> entryIndex;
 
@@ -56,7 +57,7 @@ public class WeightedEntryFeatureSource
 
     private long count = 0;
 
-    private WeightedEntryFeatureRecord previousRecord = null;
+    private Weighted<EntryFeatureRecord> previousRecord = null;
 
     public WeightedEntryFeatureSource(File file, Charset charset,
             ObjectIndex<String> entryIndex, ObjectIndex<String> featureIndex)
@@ -108,13 +109,13 @@ public class WeightedEntryFeatureSource
     }
 
     @Override
-    public WeightedEntryFeatureRecord read() throws IOException {
+    public Weighted<EntryFeatureRecord> read() throws IOException {
         final int entryId;
         if (previousRecord == null) {
             entryId = readEntry();
             parseValueDelimiter();
         } else {
-            entryId = previousRecord.getEntryId();
+            entryId = previousRecord.get().getEntryId();
         }
 
         if (!hasNext() || isDelimiterNext()) {
@@ -128,8 +129,8 @@ public class WeightedEntryFeatureSource
         final double weight = readWight();
         ++count;
 
-        final WeightedEntryFeatureRecord record = new WeightedEntryFeatureRecord(
-                entryId, featureId, weight);
+        final Weighted<EntryFeatureRecord> record = new Weighted<EntryFeatureRecord>(
+                new EntryFeatureRecord(entryId, featureId), weight);
 
         if (isValueDelimiterNext()) {
             parseValueDelimiter();
@@ -166,10 +167,10 @@ public class WeightedEntryFeatureSource
                 stringIndex);
         boolean equal = true;
         while (equal && srcA.hasNext() && srcB.hasNext()) {
-            final WeightedEntryFeatureRecord recA = srcA.read();
-            final WeightedEntryFeatureRecord recB = srcB.read();
-            equal = recA.getEntryId() == recB.getEntryId()
-                    && recA.getFeatureId() == recB.getFeatureId()
+            final Weighted<EntryFeatureRecord> recA = srcA.read();
+            final Weighted<EntryFeatureRecord> recB = srcB.read();
+            equal = recA.get().getEntryId() == recB.get().getEntryId()
+                    && recA.get().getFeatureId() == recB.get().getFeatureId()
                     && recA.getWeight() == recB.getWeight();
         }
         return equal && srcA.hasNext() == srcB.hasNext();

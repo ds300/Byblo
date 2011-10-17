@@ -28,28 +28,54 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.lib.io;
+package uk.ac.susx.mlcl.lib.tasks;
 
+import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collection;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
- * Interface defining the acceptance of objects of the given type
- * {@code T}.
  *
- * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
- * @param <T> The type of object that the implementing class will provide.
+ * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-public interface Sink<T> {
+public class DeleteTask extends AbstractTask {
 
-    /**
-     * Take given {@code record} and do something with it. Presumably store to
-     * disk, but this is undefined.
-     *
-     * @param record The object to be consumed.
-     * @throws IOException something has gone wrong with the underlying store
-     */
-    void write(final T record) throws IOException;
+    private static final Log LOG = LogFactory.getLog(DeleteTask.class);
 
-//    void writeAll(final Collection<? extends T> records) throws IOException;
+    private File file;
+
+    public DeleteTask(File file) {
+        setFile(file);
+    }
+
+    public DeleteTask() {
+        file = null;
+    }
+
+    @Override
+    protected void runTask() throws Exception {
+        if (LOG.isInfoEnabled())
+            LOG.info("Deleting file \"" + getFile() + "\".");
+        if (file == null)
+            throw new NullPointerException("file is null");
+        if (!file.exists())
+            throw new FileNotFoundException("Unnable to delete file because it "
+                    + "doesn't exist: \"" + file + "\"");
+        if (!file.delete())
+            throw new IOException("Unnable to delete file: \"" + file + "\"");
+    }
+
+    public final File getFile() {
+        return file;
+    }
+
+    public final void setFile(final File file)
+            throws NullPointerException {
+        if (file == null)
+            throw new NullPointerException("file is null");
+        this.file = file;
+    }
 }

@@ -30,27 +30,40 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
+import uk.ac.susx.mlcl.lib.tasks.CopyTask;
+import uk.ac.susx.mlcl.lib.tasks.SortTask;
 import uk.ac.susx.mlcl.lib.io.TempFileFactoryConverter;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import uk.ac.susx.mlcl.byblo.MergeTask.Formatter;
 import uk.ac.susx.mlcl.lib.Checks;
 import uk.ac.susx.mlcl.lib.io.FileFactory;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
 import uk.ac.susx.mlcl.lib.io.TempFileFactory;
 import uk.ac.susx.mlcl.lib.tasks.AbstractParallelTask;
 import uk.ac.susx.mlcl.lib.tasks.Task;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
-import java.util.Comparator;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
+import uk.ac.susx.mlcl.byblo.io.EntryFeatureSink;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntryRecord;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySink;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySource;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureRecord;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSink;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSource;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureRecord;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureSink;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureSource;
+import uk.ac.susx.mlcl.lib.ObjectIndex;
+import uk.ac.susx.mlcl.lib.io.AbstractTSVSink;
+import uk.ac.susx.mlcl.lib.io.AbstractTSVSource;
 
 /**
  *
@@ -95,45 +108,43 @@ public class ExternalCountTask extends AbstractParallelTask {
                description = "Character encoding to use for reading and writing files.")
     private Charset charset = IOUtil.DEFAULT_CHARSET;
 
-    private Comparator<String> comparator = new Comparator<String>() {
-
-        @Override
-        public int compare(String o1, String o2) {
-            return o1.substring(0, o1.lastIndexOf('\t')).compareTo(
-                    o2.substring(0, o2.lastIndexOf('\t')));
-        }
-    };
-
-    private Formatter formatter = new MergeTask.Formatter() {
-
-        @Override
-        public void write(BufferedWriter writer, String... strings) throws IOException {
-            if (strings.length == 0) {
-                throw new IllegalArgumentException(
-                        "Expecting one or more string arguments");
-            } else if (strings.length == 1) {
-                writer.write(strings[0]);
-                writer.newLine();
-            } else {
-                String key = null;
-                int total = 0;
-                for (int i = 0; i < strings.length; i++) {
-                    final int split = strings[i].lastIndexOf('\t');
-                    String newKey = strings[i].substring(0, split);
-                    if (key != null && !key.equals(newKey))
-                        throw new AssertionError(
-                                "String keys must match during merge format.");
-                    key = newKey;
-                    total += Integer.parseInt(strings[i].substring(split + 1));
-                }
-                writer.write(key);
-                writer.write('\t');
-                writer.write(Integer.toString(total));
-                writer.newLine();
-            }
-        }
-    };
-
+//    private Comparator<String> comparator = new Comparator<String>() {
+//
+//        @Override
+//        public int compare(String o1, String o2) {
+//            return o1.substring(0, o1.lastIndexOf('\t')).compareTo(
+//                    o2.substring(0, o2.lastIndexOf('\t')));
+//        }
+//    };
+//    private Formatter formatter = new MergeTask.Formatter() {
+//
+//        @Override
+//        public void write(BufferedWriter writer, String... strings) throws IOException {
+//            if (strings.length == 0) {
+//                throw new IllegalArgumentException(
+//                        "Expecting one or more string arguments");
+//            } else if (strings.length == 1) {
+//                writer.write(strings[0]);
+//                writer.newLine();
+//            } else {
+//                String key = null;
+//                int total = 0;
+//                for (int i = 0; i < strings.length; i++) {
+//                    final int split = strings[i].lastIndexOf('\t');
+//                    String newKey = strings[i].substring(0, split);
+//                    if (key != null && !key.equals(newKey))
+//                        throw new AssertionError(
+//                                "String keys must match during merge format.");
+//                    key = newKey;
+//                    total += Integer.parseInt(strings[i].substring(split + 1));
+//                }
+//                writer.write(key);
+//                writer.write('\t');
+//                writer.write(Integer.toString(total));
+//                writer.newLine();
+//            }
+//        }
+//    };
     private static final String FEATURES_FILE_SUFFIX = "_f";
 
     private static final String ENTRY_FEATURES_FILE_SUFFIX = "ef";
@@ -319,11 +330,11 @@ public class ExternalCountTask extends AbstractParallelTask {
             File dst = sortTask.getDstFile();
 
             if (dst.getName().endsWith(ENTRIES_FILE_SUFFIX))
-                queueMergeTask(dst, mergeEntryQueue);
+                queueEntryMergeTask(dst, mergeEntryQueue);
             else if (dst.getName().endsWith(ENTRY_FEATURES_FILE_SUFFIX))
-                queueMergeTask(dst, mergeEntryFeatureQueue);
+                queueEntryFeatureMergeTask(dst, mergeEntryFeatureQueue);
             else if (dst.getName().endsWith(FEATURES_FILE_SUFFIX))
-                queueMergeTask(dst, mergeFeaturesQueue);
+                queueFeatureMergeTask(dst, mergeFeaturesQueue);
             else
                 throw new AssertionError("File ending does not match known merge types: " + dst.
                         getName());
@@ -331,23 +342,27 @@ public class ExternalCountTask extends AbstractParallelTask {
 
         } else if (task.getClass().equals(MergeTask.class)) {
 
-            MergeTask mergeTask = (MergeTask) task;
+            MergeTask<?> mergeTask = (MergeTask) task;
 
-            File dst = mergeTask.getDestFile();
+            final File dst = ((AbstractTSVSink) mergeTask.getSink()).getFile();
+            final File srcA = ((AbstractTSVSource) mergeTask.getSourceA()).
+                    getFile();
+            final File srcB = ((AbstractTSVSource) mergeTask.getSourceB()).
+                    getFile();
 
-            if (dst.getName().endsWith(ENTRIES_FILE_SUFFIX))
-                queueMergeTask(dst, mergeEntryQueue);
-            else if (dst.getName().endsWith(ENTRY_FEATURES_FILE_SUFFIX))
-                queueMergeTask(dst, mergeEntryFeatureQueue);
-            else if (dst.getName().endsWith(FEATURES_FILE_SUFFIX))
-                queueMergeTask(dst, mergeFeaturesQueue);
-            else
-                throw new AssertionError("File ending does not match known merge types: " + dst.
-                        getName());
+            if (mergeTask.getSink() instanceof WeightedEntrySink) {
+                queueEntryMergeTask(dst, mergeEntryQueue);
+            } else if (mergeTask.getSink() instanceof EntryFeatureSink) {
+                queueEntryFeatureMergeTask(dst, mergeEntryFeatureQueue);
+            } else if (mergeTask.getSink() instanceof WeightedFeatureSink) {
+                queueFeatureMergeTask(dst, mergeFeaturesQueue);
+            } else {
+                throw new AssertionError("Merge task is of unknown type: " + mergeTask.
+                        getSink());
+            }
 
-            submitTask(new DeleteTask(mergeTask.getSourceFileA()));
-            submitTask(new DeleteTask(mergeTask.getSourceFileB()));
-
+            srcA.delete();
+            srcB.delete();
         } else if (task.getClass().equals(DeleteTask.class)) {
             // not a sausage
         } else {
@@ -384,7 +399,32 @@ public class ExternalCountTask extends AbstractParallelTask {
         new DeleteTask(finalMerge).runTask();
     }
 
-    protected Future<MergeTask> queueMergeTask(File file, Queue<File> q) throws IOException {
+//    protected Future<MergeTask> queueMergeTask(File file, Queue<File> q) throws IOException {
+//        q.add(file);
+//
+//        if (q.size() >= 2) {
+//
+//            File result_x = tempFileFactory.createFile();
+//
+//            File result = new File(result_x.getPath() + file.getName().substring(
+//                    file.getName().length() - 2));
+//            result_x.delete();
+//
+////            Source
+//            
+//            MergeTask mergeTask = new MergeTask(
+//                    q.poll(), q.poll(), result,
+//                    getCharset());
+//            mergeTask.setComparator(comparator);
+//            mergeTask.setFormatter(formatter);
+//            return submitTask(mergeTask);
+//        } else {
+//            return null;
+//        }
+//    }
+//    
+    protected Future<MergeTask<WeightedEntryFeatureRecord>> queueEntryFeatureMergeTask(
+            File file, Queue<File> q) throws IOException {
         q.add(file);
 
         if (q.size() >= 2) {
@@ -395,11 +435,91 @@ public class ExternalCountTask extends AbstractParallelTask {
                     file.getName().length() - 2));
             result_x.delete();
 
-            MergeTask mergeTask = new MergeTask(
-                    q.poll(), q.poll(), result,
-                    getCharset());
-            mergeTask.setComparator(comparator);
-            mergeTask.setFormatter(formatter);
+            File srcFileA = q.poll();
+            File srcFileB = q.poll();
+            File sinkFile = result;
+
+            ObjectIndex<String> entryIndex = new ObjectIndex<String>();
+            ObjectIndex<String> featureIndex = new ObjectIndex<String>();
+
+            WeightedEntryFeatureSource srcA = new WeightedEntryFeatureSource(
+                    srcFileA, charset, entryIndex, featureIndex);
+            WeightedEntryFeatureSource srcB = new WeightedEntryFeatureSource(
+                    srcFileB, charset, entryIndex, featureIndex);
+            WeightedEntryFeatureSink sink = new WeightedEntryFeatureSink(
+                    sinkFile, charset, entryIndex, featureIndex);
+
+            MergeTask<WeightedEntryFeatureRecord> mergeTask =
+                    new MergeTask<WeightedEntryFeatureRecord>(srcA, srcB, sink,
+                    null, charset);
+            return submitTask(mergeTask);
+        } else {
+            return null;
+        }
+    }
+
+    protected Future<MergeTask<WeightedEntryRecord>> queueEntryMergeTask(
+            File file, Queue<File> q) throws IOException {
+        q.add(file);
+
+        if (q.size() >= 2) {
+
+            File result_x = tempFileFactory.createFile();
+
+            File result = new File(result_x.getPath() + file.getName().substring(
+                    file.getName().length() - 2));
+            result_x.delete();
+
+            File srcFileA = q.poll();
+            File srcFileB = q.poll();
+            File sinkFile = result;
+
+            ObjectIndex<String> entryIndex = new ObjectIndex<String>();
+
+            WeightedEntrySource srcA = new WeightedEntrySource(
+                    srcFileA, charset, entryIndex);
+            WeightedEntrySource srcB = new WeightedEntrySource(
+                    srcFileB, charset, entryIndex);
+            WeightedEntrySink sink = new WeightedEntrySink(
+                    sinkFile, charset, entryIndex);
+
+            MergeTask<WeightedEntryRecord> mergeTask =
+                    new MergeTask<WeightedEntryRecord>(srcA, srcB, sink,
+                    null, charset);
+            return submitTask(mergeTask);
+        } else {
+            return null;
+        }
+    }
+
+    protected Future<MergeTask<WeightedFeatureRecord>> queueFeatureMergeTask(
+            File file, Queue<File> q) throws IOException {
+        q.add(file);
+
+        if (q.size() >= 2) {
+
+            File result_x = tempFileFactory.createFile();
+
+            File result = new File(result_x.getPath() + file.getName().substring(
+                    file.getName().length() - 2));
+            result_x.delete();
+
+            File srcFileA = q.poll();
+            File srcFileB = q.poll();
+            File sinkFile = result;
+
+            ObjectIndex<String> featureIndex = new ObjectIndex<String>();
+
+            WeightedFeatureSource srcA = new WeightedFeatureSource(
+                    srcFileA, charset, featureIndex);
+            WeightedFeatureSource srcB = new WeightedFeatureSource(
+                    srcFileB, charset, featureIndex);
+            WeightedFeatureSink sink = new WeightedFeatureSink(
+                    sinkFile, charset, featureIndex);
+
+            MergeTask<WeightedFeatureRecord> mergeTask =
+                    new MergeTask<WeightedFeatureRecord>(srcA, srcB, sink,
+                    null, charset);
             return submitTask(mergeTask);
         } else {
             return null;

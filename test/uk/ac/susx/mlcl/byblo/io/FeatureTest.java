@@ -45,8 +45,8 @@ import static uk.ac.susx.mlcl.TestConstants.*;
 public class FeatureTest {
 
     private void copyF(File a, File b, boolean compact) throws FileNotFoundException, IOException {
-        FeatureSource aSrc = new FeatureSource(a, DEFAULT_CHARSET);
-        FeatureSink bSink = new FeatureSink(b, DEFAULT_CHARSET,
+        WeightedFeatureSource aSrc = new WeightedFeatureSource(a, DEFAULT_CHARSET);
+        WeightedFeatureSink bSink = new WeightedFeatureSink(b, DEFAULT_CHARSET,
                 aSrc.getStringIndex());
     bSink.setCompactFormatEnabled(compact);
 

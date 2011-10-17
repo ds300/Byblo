@@ -31,8 +31,8 @@
 package uk.ac.susx.mlcl.byblo;
 
 import org.junit.Ignore;
-import uk.ac.susx.mlcl.byblo.io.EntrySource;
-import uk.ac.susx.mlcl.byblo.io.FeatureSource;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySource;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSource;
 import java.io.File;
 import java.nio.charset.Charset;
 import org.junit.Test;
@@ -140,9 +140,9 @@ public class ExternalCountTaskTest {
                 DEFAULT_CHARSET, 1000000);
 
         assertTrue("Output entries file differs from sampledata file.",
-                EntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
+                WeightedEntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
         assertTrue("Output features file differs from test data file.",
-                FeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
+                WeightedFeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
                 DEFAULT_CHARSET));
         assertTrue("Output entry/features file differs from test data file.",
                 EntryFeatureSource.equal(efActual, TEST_FRUIT_ENTRY_FEATURES,
@@ -167,9 +167,9 @@ public class ExternalCountTaskTest {
                 DEFAULT_CHARSET, 10000);
 
         assertTrue("Output entries file differs from sampledata file.",
-                EntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
+                WeightedEntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
         assertTrue("Output features file differs from test data file.",
-                FeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
+                WeightedFeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
                 DEFAULT_CHARSET));
 //        assertTrue("Output entry/features file differs from test data file.",
 //                EntryFeatureSource.equal(efActual, TEST_FRUIT_ENTRY_FEATURES,
@@ -196,9 +196,9 @@ public class ExternalCountTaskTest {
 
 
         assertTrue("Output entries file differs from sampledata file.",
-                EntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
+                WeightedEntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
         assertTrue("Output features file differs from test data file.",
-                FeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
+                WeightedFeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
                 DEFAULT_CHARSET));
         assertTrue("Output entry/features file differs from test data file.",
                 EntryFeatureSource.equal(efActual, TEST_FRUIT_ENTRY_FEATURES,

@@ -34,8 +34,8 @@ import uk.ac.susx.mlcl.byblo.io.EntryFeatureSource;
 import java.io.File;
 import java.nio.charset.Charset;
 import org.junit.Test;
-import uk.ac.susx.mlcl.byblo.io.EntrySource;
-import uk.ac.susx.mlcl.byblo.io.FeatureSource;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySource;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSource;
 import static org.junit.Assert.*;
 import static uk.ac.susx.mlcl.TestConstants.*;
 
@@ -108,9 +108,9 @@ public class CountTaskTest {
                 DEFAULT_CHARSET);
 
         assertTrue("Output entries file differs from sampledata file.",
-                EntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
+                WeightedEntrySource.equal(eActual, TEST_FRUIT_ENTRIES, DEFAULT_CHARSET));
         assertTrue("Output features file differs from test data file.",
-                FeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
+                WeightedFeatureSource.equal(fActual, TEST_FRUIT_FEATURES,
                 DEFAULT_CHARSET));
         assertTrue("Output entry/features file differs from test data file.",
                 EntryFeatureSource.equal(efActual, TEST_FRUIT_ENTRY_FEATURES,

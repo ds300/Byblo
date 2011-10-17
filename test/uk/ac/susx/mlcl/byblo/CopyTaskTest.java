@@ -30,6 +30,7 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.lib.tasks.CopyTask;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
 import com.beust.jcommander.JCommander;
 import java.io.IOException;

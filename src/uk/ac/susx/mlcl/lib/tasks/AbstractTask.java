@@ -30,8 +30,6 @@
  */
 package uk.ac.susx.mlcl.lib.tasks;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import org.apache.commons.logging.Log;
@@ -41,25 +39,26 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-@Parameters()
 public abstract class AbstractTask implements Task {
 
     private static final Log LOG = LogFactory.getLog(AbstractTask.class);
-
-    @Parameter(names = {"-h", "--help"},
-               description = "Display this help message.")
-    private boolean usageRequested = false;
 
     private Queue<Exception> exceptions = null;
 
     public AbstractTask() {
     }
 
-    protected abstract void initialiseTask() throws Exception;
+    protected void initialiseTask() throws Exception {
+        // nada
+    }
 
-    protected abstract void runTask() throws Exception;
+    protected void runTask() throws Exception {
+        // nada
+    }
 
-    protected abstract void finaliseTask() throws Exception;
+    protected void finaliseTask() throws Exception {
+        // nada
+    }
 
     @Override
     public void run() {
@@ -76,10 +75,6 @@ public abstract class AbstractTask implements Task {
         }
         if (LOG.isDebugEnabled())
             LOG.debug("Completed task " + this + ".");
-    }
-
-    public final boolean isUsageRequested() {
-        return usageRequested;
     }
 
     protected final void catchException(Exception throwable) {
@@ -116,7 +111,6 @@ public abstract class AbstractTask implements Task {
     @Override
     public String toString() {
         return "AbstractTask{"
-                + "usageRequested=" + usageRequested
                 + ", exceptions=" + exceptions + '}';
     }
 }

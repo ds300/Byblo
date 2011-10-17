@@ -39,10 +39,10 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import uk.ac.susx.mlcl.byblo.allpairs.InvertedApssTask;
 import uk.ac.susx.mlcl.byblo.allpairs.ThreadedApssTask;
-import uk.ac.susx.mlcl.byblo.io.FeatureSource;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSource;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureSource;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureVectorSource;
-import uk.ac.susx.mlcl.byblo.io.EntrySource;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySource;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntryPairSink;
 import uk.ac.susx.mlcl.byblo.measure.AbstractMIProximity;
 import uk.ac.susx.mlcl.byblo.measure.CrMi;
@@ -227,7 +227,7 @@ public class AllPairsTask extends AbstractTask {
 
         if (LOG.isDebugEnabled())
             LOG.debug("Loading entry frequencies file " + entriesFile);
-        EntrySource entrySource = new EntrySource(
+        WeightedEntrySource entrySource = new WeightedEntrySource(
                 entriesFile, charset, strIndex);
         //TODO: Remove because it's never used?
         double[] entryFrequencies = entrySource.readAllAsArray();
@@ -244,7 +244,7 @@ public class AllPairsTask extends AbstractTask {
                 if (LOG.isDebugEnabled())
                     LOG.debug("Loading features file " + featuresFile);
 
-                FeatureSource features = new FeatureSource(
+                WeightedFeatureSource features = new WeightedFeatureSource(
                         featuresFile, charset, strIndex);
                 AbstractMIProximity bmip = ((AbstractMIProximity) prox);
                 bmip.setFeatureFrequencies(features.readAllAsArray());
@@ -263,7 +263,7 @@ public class AllPairsTask extends AbstractTask {
                     LOG.debug("Loading entries file for "
                             + "KendalTau.numFeatures: " + featuresFile);
 
-                FeatureSource features = new FeatureSource(
+                WeightedFeatureSource features = new WeightedFeatureSource(
                         featuresFile, charset, strIndex);
                 features.readAll();
 

@@ -28,87 +28,91 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.byblo.io;
+package uk.ac.susx.mlcl.lib.io;
 
 import com.google.common.base.Objects;
-import uk.ac.susx.mlcl.lib.ObjectIndex;
+import java.io.Serializable;
 import uk.ac.susx.mlcl.lib.collect.IWeighted;
 
 /**
- * <tt>WeightedEntryFeatureRecord</tt> objects represent a single instance of an 
- * entry/feature pair, associated with a weight. Typically the weight is a 
- * frequency use to estimate the likelihood of the feature in the entries 
- * context.
- *
- * <p>Instances of <tt>WeightedEntryFeatureRecord</tt> are immutable.<p>
+ * <tt>WeightedEntryRecord</tt> objects represent a single instance of a thesaurus
+ * entry, with a weighting estimated from the source corpus. The weighting is 
+ * usually the entries frequency, but it could be anything.
+ * 
+ * <p>Instances of <tt>WeightedEntryRecord</tt> are immutable.<p>
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public final class WexightedEntryFeatureRecord
-        extends EntryFeatureRecord
-        implements IWeighted  {
+public class Weighted<T>
+        implements Serializable, Comparable<Weighted<T>>, IWeighted {
 
     private static final long serialVersionUID = 1L;
 
+    private T obj;
+
     private double weight;
 
-    public WeightedEntryFeatureRecord(
-            final int entryId, final int featureId, final double weight) {
-        super(entryId, featureId);
+    public Weighted(final T obj, final double weight) {
+        this.obj = obj;
         this.weight = weight;
     }
 
     /**
      * Constructor used during de-serialization.
      */
-    protected WeightedEntryFeatureRecord() {
-        super();
+    protected Weighted() {
     }
 
-    public double getWeight() {
-        return weight;
+    public T get() {
+        return obj;
     }
 
     @Override
-    public String toString() {
-        return Objects.toStringHelper(this).
-                add("entryId", getEntryId()).
-                add("featureId", getFeatureId()).
-                add("weight", getWeight()).
-                toString();
-    }
-
-    public String toString(ObjectIndex<String> entryIndex,
-            ObjectIndex<String> featureIndex) {
-        return Objects.toStringHelper(this).
-                add("entryId", entryIndex.get(getEntryId())).
-                add("featureId", featureIndex.get(getFeatureId())).
-                add("weight", getWeight()).
-                toString();
+    public double getWeight() {
+        return weight;
     }
 
     /**
      * Indicates whether some other object is "equal to" this one.
      * 
-     * <p>Note that only the <tt>entryId</tt> and <tt>featureId</tt> fields are
-     * used for equality. I.e two objects with the same ids, but differing 
-     * weights <em>will</em> be consider equal.</p>
+     * <p>Note that only the <tt>entryId</tt> field is used for equality. I.e  
+     * two objects with the same <tt>entryId</tt>, but differing weights 
+     * <em>will</em> be consider equal.</p>
      * 
      * @param   obj   the reference object with which to compare.
      * @return  <code>true</code> if this object is the same as the obj
      *          argument; <code>false</code> otherwise.
      */
     @Override
+    @SuppressWarnings("unchecked")
     public boolean equals(Object obj) {
-        if (obj == null)
+        if (obj == this)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
             return false;
-        if (getClass() != obj.getClass())
-            return false;
-        return super.equals((EntryFeatureRecord) obj);
+        return equals((Weighted<T>) obj);
+    }
+
+    public boolean equals(Weighted<T> other) {
+        return obj.equals(other.get());
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return obj.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).
+                addValue(obj).add("weight", weight).toString();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public int compareTo(Weighted<T> that) {
+        if (!(obj instanceof Comparable))
+            throw new UnsupportedOperationException();
+        return ((Comparable<T>) obj).compareTo(that.get());
     }
 }

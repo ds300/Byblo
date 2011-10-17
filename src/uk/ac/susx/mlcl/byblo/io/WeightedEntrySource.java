@@ -44,15 +44,15 @@ import org.apache.commons.logging.LogFactory;
 import uk.ac.susx.mlcl.lib.io.Lexer.Tell;
 
 /**
- * An <tt>EntrySource</tt> object is used to retrieve {@link EntryRecord} 
+ * An <tt>WeightedEntrySource</tt> object is used to retrieve {@link WeightedEntryRecord} 
  * objects from a flat file. 
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  * @see EntrySink
  */
-public class EntrySource extends AbstractTSVSource<EntryRecord> {
+public class WeightedEntrySource extends AbstractTSVSource<WeightedEntryRecord> {
 
-    private static final Log LOG = LogFactory.getLog(EntrySource.class);
+    private static final Log LOG = LogFactory.getLog(WeightedEntrySource.class);
 
     private final ObjectIndex<String> stringIndex;
 
@@ -68,9 +68,9 @@ public class EntrySource extends AbstractTSVSource<EntryRecord> {
 
     private int count = 0;
 
-    private EntryRecord previousRecord = null;
+    private WeightedEntryRecord previousRecord = null;
 
-    public EntrySource(File file, Charset charset,
+    public WeightedEntrySource(File file, Charset charset,
             ObjectIndex<String> stringIndex)
             throws FileNotFoundException, IOException {
         super(file, charset);
@@ -79,7 +79,7 @@ public class EntrySource extends AbstractTSVSource<EntryRecord> {
         this.stringIndex = stringIndex;
     }
 
-    public EntrySource(File file, Charset charset)
+    public WeightedEntrySource(File file, Charset charset)
             throws FileNotFoundException, IOException {
         this(file, charset, new ObjectIndex<String>());
     }
@@ -124,7 +124,7 @@ public class EntrySource extends AbstractTSVSource<EntryRecord> {
     }
 
     @Override
-    public EntryRecord read() throws IOException {
+    public WeightedEntryRecord read() throws IOException {
         final int entryId;
         if (previousRecord == null) {
             entryId = stringIndex.get(parseString());
@@ -145,7 +145,7 @@ public class EntrySource extends AbstractTSVSource<EntryRecord> {
         weightSum += weight;
         weightMax = Math.max(weightMax, weight);
         ++count;
-        final EntryRecord record = new EntryRecord(entryId, weight);
+        final WeightedEntryRecord record = new WeightedEntryRecord(entryId, weight);
 
         if (isValueDelimiterNext()) {
             parseValueDelimiter();
@@ -163,9 +163,9 @@ public class EntrySource extends AbstractTSVSource<EntryRecord> {
     public Int2DoubleMap readAll() throws IOException {
         Int2DoubleMap entityFrequenciesMap = new Int2DoubleOpenHashMap();
         while (this.hasNext()) {
-            EntryRecord entry = this.read();
+            WeightedEntryRecord entry = this.read();
             if (entityFrequenciesMap.containsKey(entry.getEntryId())) {
-                // If we encounter the same EntryRecord more than once, it means
+                // If we encounter the same WeightedEntryRecord more than once, it means
                 // the perl has decided two strings are not-equal, which java
                 // thinks are equal ... so we need to merge the records:
 
@@ -202,12 +202,12 @@ public class EntrySource extends AbstractTSVSource<EntryRecord> {
 
     public static boolean equal(File a, File b, Charset charset) throws IOException {
         final ObjectIndex<String> stringIndex = new ObjectIndex<String>();
-        final EntrySource srcA = new EntrySource(a, charset, stringIndex);
-        final EntrySource srcB = new EntrySource(b, charset, stringIndex);
+        final WeightedEntrySource srcA = new WeightedEntrySource(a, charset, stringIndex);
+        final WeightedEntrySource srcB = new WeightedEntrySource(b, charset, stringIndex);
         boolean equal = true;
         while (equal && srcA.hasNext() && srcB.hasNext()) {
-            final EntryRecord recA = srcA.read();
-            final EntryRecord recB = srcB.read();
+            final WeightedEntryRecord recA = srcA.read();
+            final WeightedEntryRecord recB = srcB.read();
             equal = recA.getEntryId() == recB.getEntryId()
                     && recA.getWeight() == recB.getWeight();
         }

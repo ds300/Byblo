@@ -30,20 +30,17 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
+import java.io.Closeable;
 import uk.ac.susx.mlcl.lib.Checks;
-import uk.ac.susx.mlcl.lib.io.IOUtil;
 import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
-import uk.ac.susx.mlcl.lib.tasks.CaseInsensitiveComparator;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
+import java.io.Flushable;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.io.IOUtil;
+import uk.ac.susx.mlcl.lib.io.Sink;
+import uk.ac.susx.mlcl.lib.io.Source;
 
 /**
  * Merges the contents of two sorted source files, line by line, into a
@@ -57,43 +54,78 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-@Parameters(
-commandDescription = "Merges the contents of two sorted source files, line by line, into a destination file.")
-public class MergeTask extends AbstractTask {
+public class MergeTask<T extends Comparable<? super T>>
+        extends AbstractTask {
 
     private static final Log LOG = LogFactory.getLog(MergeTask.class);
 
-    private Comparator<String> comparator;
+    private Source<T> sourceA;
 
-    private Formatter formatter = new DefaultFormatter();
+    private Source<T> sourceB;
 
-    @Parameter(names = {"-ifa", "--input-file-a"}, required = true,
-               description = "The first file to merge.")
-    private File sourceFileA;
+    private Sink<T> sink;
 
-    @Parameter(names = {"-ifb", "--input-file-b"}, required = true,
-               description = "The second file to merge.")
-    private File sourceFileB;
+    private Comparator<T> comparator = null;
 
-    @Parameter(names = {"-of", "--output-file"},
-               description = "The output file to which both input will be merged.")
-    private File destinationFile;
-
-    @Parameter(names = {"-c", "--charset"},
-               description = "The character set encoding to use for both input and output files.")
     private Charset charset = IOUtil.DEFAULT_CHARSET;
 
-    public MergeTask(File sourceFileA, File sourceFileB, File destination,
-            Charset charset) {
-        setSourceFileA(sourceFileA);
-        setSourceFileB(sourceFileB);
-        setDestinationFile(destination);
+    public MergeTask(Source<T> srcA, Source<T> srcB, Sink<T> sink,
+            Comparator<T> comparator, Charset charset) {
         setCharset(charset);
-        comparator = new CaseInsensitiveComparator<String>();
+        setComparator(comparator);
+        setSourceA(sourceA);
+        setSourceB(sourceB);
+        setSink(sink);
+    }
+
+    public MergeTask(Source<T> sourceA,
+            Source<T> sourceB,
+            Sink<T> sink) {
+        setSourceA(sourceA);
+        setSourceB(sourceB);
+        setSink(sink);
     }
 
     public MergeTask() {
-        comparator = new CaseInsensitiveComparator<String>();
+    }
+
+    public final Comparator<T> getComparator() {
+        return comparator;
+    }
+
+    /**
+     * If set to null the use the natural ordering of the items.
+     * @param comparator 
+     */
+    public final void setComparator(Comparator<T> comparator) {
+        this.comparator = comparator;
+    }
+
+    public final Sink<T> getSink() {
+        return sink;
+    }
+
+    public final void setSink(Sink<T> sink) {
+        Checks.checkNotNull(sink);
+        this.sink = sink;
+    }
+
+    public final Source<T> getSourceA() {
+        return sourceA;
+    }
+
+    public final void setSourceA(Source<T> sourceA) {
+        Checks.checkNotNull(sourceA);
+        this.sourceA = sourceA;
+    }
+
+    public final Source<T> getSourceB() {
+        return sourceB;
+    }
+
+    public final void setSourceB(Source<T> sourceB) {
+        Checks.checkNotNull(sourceB);
+        this.sourceB = sourceB;
     }
 
     public final Charset getCharset() {
@@ -113,132 +145,49 @@ public class MergeTask extends AbstractTask {
     protected void finaliseTask() throws Exception {
     }
 
-    public interface Formatter {
-
-        public void write(BufferedWriter writer, String... strings) throws IOException;
-    }
-
-    public class DefaultFormatter implements Formatter {
-
-        @Override
-        public void write(BufferedWriter writer, String... strings)
-                throws IOException {
-            for (String str : strings) {
-                writer.write(str);
-                writer.newLine();
-            }
-        }
-    }
-
-    public Formatter getFormatter() {
-        return formatter;
-    }
-
-    public void setFormatter(Formatter formatter) {
-        if (formatter == null)
-            throw new NullPointerException("formatter is null");
-        this.formatter = formatter;
-    }
-
     @Override
     protected void runTask() throws Exception {
-
-        BufferedReader readerA = null;
-        BufferedReader readerB = null;
-        BufferedWriter writer = null;
-
         try {
-            if (LOG.isInfoEnabled())
-                LOG.info("Merging from files \"" + getSourceFileA() + "\" and \"" + getSourceFileB() + "\" to \"" + getDestFile() + "\".");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Merging from files \"" + getSourceA()
+                        + "\" and \"" + getSourceB() + "\" to \""
+                        + getSink() + "\".");
+            }
 
-            readerA = IOUtil.openReader(getSourceFileA(), getCharset());
-            readerB = IOUtil.openReader(getSourceFileB(), getCharset());
-            writer = IOUtil.openWriter(getDestFile(), getCharset());
-            String lineA = readerA.readLine();
-            String lineB = readerB.readLine();
-            while (lineA != null && lineB != null) {
-                int comp = comparator.compare(lineA, lineB);
+            T nextA = sourceA.hasNext() ? sourceA.read() : null;
+            T nextB = sourceB.hasNext() ? sourceB.read() : null;
+            while (nextA != null && nextB != null) {
+
+                final int comp = comparator == null
+                        ? nextA.compareTo(nextB)
+                        : comparator.compare(nextA, nextB);
+
                 if (comp < 0) {
-                    formatter.write(writer, lineA);
-                    lineA = readerA.readLine();
+                    sink.write(nextA);
+                    nextA = sourceA.hasNext() ? sourceA.read() : null;
                 } else if (comp > 0) {
-                    formatter.write(writer, lineB);
-                    lineB = readerB.readLine();
+                    sink.write(nextB);
+                    nextB = sourceB.hasNext() ? sourceB.read() : null;
                 } else {
-                    formatter.write(writer, lineA, lineB);
-                    lineA = readerA.readLine();
-                    lineB = readerB.readLine();
+                    sink.write(nextA);
+                    sink.write(nextB);
+                    nextA = sourceA.hasNext() ? sourceA.read() : null;
+                    nextB = sourceB.hasNext() ? sourceB.read() : null;
                 }
             }
-            while (lineA != null) {
-                formatter.write(writer, lineA);
-                lineA = readerA.readLine();
+            while (nextA != null) {
+                sink.write(nextA);
+                nextA = sourceA.hasNext() ? sourceA.read() : null;
             }
-            while (lineB != null) {
-                formatter.write(writer, lineB);
-                lineB = readerB.readLine();
+            while (nextB != null) {
+                sink.write(nextB);
+                nextB = sourceB.hasNext() ? sourceB.read() : null;
             }
         } finally {
-            if (readerA != null)
-                readerA.close();
-            if (readerB != null)
-                readerB.close();
-            if (writer != null) {
-                writer.flush();
-                writer.close();
-            }
+            if (sink instanceof Flushable)
+                ((Flushable) sink).flush();
+            if (sink instanceof Closeable)
+                ((Closeable) sink).close();
         }
-    }
-
-    public File getSourceFileA() {
-        return sourceFileA;
-    }
-
-    public File getSourceFileB() {
-        return sourceFileB;
-    }
-
-    public File getDestFile() {
-        return destinationFile;
-    }
-
-    public Comparator<String> getComparator() {
-        return comparator;
-    }
-
-    public final void setSourceFileB(File sourceFileB) {
-        if (sourceFileB == null)
-            throw new NullPointerException("sourceFileB = null");
-        if (sourceFileB == sourceFileA)
-            throw new IllegalArgumentException("sourceFileB == sourceFileA");
-        if (destinationFile == sourceFileB)
-            throw new IllegalArgumentException("destination == sourceFileB");
-        this.sourceFileB = sourceFileB;
-    }
-
-    public final void setSourceFileA(File sourceFileA) {
-        if (sourceFileA == null)
-            throw new NullPointerException("sourceFileA = null");
-        if (sourceFileA == sourceFileB)
-            throw new IllegalArgumentException("sourceFileA == sourceFileB");
-        if (destinationFile == sourceFileA)
-            throw new IllegalArgumentException("destination == sourceFileA");
-        this.sourceFileA = sourceFileA;
-    }
-
-    public final void setDestinationFile(File destination) {
-        if (destination == null)
-            throw new NullPointerException("destination = null");
-        if (destination == sourceFileB)
-            throw new IllegalArgumentException("destination == sourceFileB");
-        if (destination == sourceFileA)
-            throw new IllegalArgumentException("destination == sourceFileA");
-        this.destinationFile = destination;
-    }
-
-    public final void setComparator(Comparator<String> comparator) {
-        if (comparator == null)
-            throw new NullPointerException("comparator = null");
-        this.comparator = comparator;
     }
 }

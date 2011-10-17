@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -50,6 +51,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -58,6 +60,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.Checks;
 
 /**
  *
@@ -307,11 +310,6 @@ public class IOUtil {
             public void write(T record) throws IOException {
                 collection.add(record);
             }
-
-            @Override
-            public void writeAll(Collection<? extends T> records) throws IOException {
-                collection.addAll(records);
-            }
         };
     }
 
@@ -370,5 +368,44 @@ public class IOUtil {
 
     public static File createTempDir(String prefix, String suffix) throws IOException {
         return createTempDir(prefix, suffix, null);
+    }
+
+    public static <T> void writeAll(Iterable<? extends T> src,
+            Sink<? super T> sink) throws IOException {
+        Checks.checkNotNull("src", src);
+        Checks.checkNotNull("sink", sink);
+        for (T o : src) {
+            sink.write(o);
+        }
+        if (sink instanceof Flushable)
+            ((Flushable) sink).flush();
+    }
+
+    public static <T> void copy(Source<? extends T> src,
+            Sink<? super T> sink) throws IOException {
+        Checks.checkNotNull("src", src);
+        Checks.checkNotNull("sink", sink);
+        while (src.hasNext()) {
+            sink.write(src.read());
+        }
+        if (sink instanceof Flushable)
+            ((Flushable) sink).flush();
+    }
+
+    public static <T> void readAll(Source<? extends T> src,
+            Collection<? super T> dst)
+            throws IOException {
+        Checks.checkNotNull("src", src);
+        Checks.checkNotNull("dst", dst);
+        while (src.hasNext()) {
+            dst.add(src.read());
+        }
+    }
+
+    public static <T> List<T> readAll(Source<? extends T> src)
+            throws IOException {
+        final List<T> dst = new ArrayList<T>();
+        readAll(src, dst);
+        return dst;
     }
 }

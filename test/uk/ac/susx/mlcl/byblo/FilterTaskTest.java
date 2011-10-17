@@ -48,7 +48,7 @@ import static uk.ac.susx.mlcl.ExitTrapper.*;
  */
 public class FilterTaskTest {
 
-    private static final String SUBJECT = FilterTask.class.getName();
+    private static final String SUBJECT = FilterCommand.class.getName();
 
     private final static File OUTPUT_ENTRIES = new File(TEST_OUTPUT_DIR,
             TEST_FRUIT_ENTRIES_FILTERED.getName());

@@ -30,6 +30,7 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
 import com.beust.jcommander.JCommander;
 import java.util.ResourceBundle;
 import java.io.File;

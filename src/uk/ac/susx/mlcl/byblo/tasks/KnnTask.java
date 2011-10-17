@@ -28,19 +28,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.byblo;
+package uk.ac.susx.mlcl.byblo.tasks;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
-import uk.ac.susx.mlcl.lib.io.IOUtil;
-import java.io.File;
+import uk.ac.susx.mlcl.lib.tasks.SortTask;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntryPairRecord;
+import uk.ac.susx.mlcl.lib.Checks;
+import uk.ac.susx.mlcl.lib.io.Sink;
+import uk.ac.susx.mlcl.lib.io.Source;
 
 /**
  * Task that read in a file and produces the k-nearest-neighbors for each base 
@@ -49,20 +47,32 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-@Parameters(
-commandDescription = "Perform k-nearest-neighbours on a similarity file.")
-public class KnnTask extends SortTask {
+public class KnnTask extends SortTask<WeightedEntryPairRecord> {
 
     private static final Log LOG = LogFactory.getLog(KnnTask.class);
 
-    @Parameter(names = {"-k"},
-               description = "The maximum number of neighbours to produce per word.")
-    private int k = ExternalKnnTask.DEFAULT_K;
+    public static final int DEFAULT_K = 100;
 
-    public KnnTask(File sourceFile, File destinationFile, Charset charset,
-            Comparator<String> comparator, int k) {
-        super(sourceFile, destinationFile, charset, comparator);
-        this.k = k;
+    private int k = DEFAULT_K;
+
+    public KnnTask(Source<WeightedEntryPairRecord> source,
+            Sink<WeightedEntryPairRecord> sink,
+            Comparator<WeightedEntryPairRecord> comparator,
+            Charset charset, int k) {
+        setCharset(charset);
+        setComparator(comparator);
+        setSource(source);
+        setSink(sink);
+        setK(k);
+    }
+
+    public KnnTask(Source<WeightedEntryPairRecord> source,
+            Sink<WeightedEntryPairRecord> sink) {
+        setSource(source);
+        setSink(sink);
+    }
+
+    public KnnTask() {
     }
 
     public final int getK() {
@@ -70,38 +80,30 @@ public class KnnTask extends SortTask {
     }
 
     public final void setK(int k) {
-        if (k < 1)
-            throw new IllegalArgumentException("k < 1");
+        Checks.checkRangeIncl(k, 1, Integer.MAX_VALUE);
         this.k = k;
     }
 
     @Override
     protected void runTask() throws Exception {
         if (LOG.isInfoEnabled())
-            LOG.info("Running kNN in memory from \"" + getSrcFile()
-                    + "\" to \"" + getDstFile() + "\".");
-        final List<String> linesIn = new ArrayList<String>();
-        IOUtil.readAllLines(getSrcFile(), getCharset(), linesIn);
-        final List<String> linesOut = new ArrayList<String>();
-        knnLines(linesIn, linesOut);
-        IOUtil.writeAllLines(getDstFile(), getCharset(), linesOut);
-    }
+            LOG.info("Running K-Nearest-Neighbours from \"" + getSource()
+                    + "\" to \"" + getSink() + "\".");
 
-    protected void knnLines(Collection<? extends String> in,
-            Collection<? super String> out) {
-        String currentWord = null;
-        int count = 0;
-        for (String line : in) {
-            String[] parts = line.split("\t");
-            String word = parts[0];
-            if (!word.equals(currentWord)) {
-                currentWord = word;
-                count = 1;
+
+        int currentBaseEntry = -1;
+        int currentCount = -1;
+        while (getSource().hasNext()) {
+            WeightedEntryPairRecord record = getSource().read();
+            if (record.getEntry1Id() != currentBaseEntry) {
+                currentBaseEntry = record.getEntry1Id();
+                currentCount = 1;
             } else {
-                count++;
+                currentCount++;
             }
-            if (count <= k) {
-                out.add(line);
+
+            if (currentCount <= getK()) {
+                getSink().write(record);
             }
         }
     }

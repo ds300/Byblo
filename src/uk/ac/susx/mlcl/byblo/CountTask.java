@@ -32,10 +32,10 @@ package uk.ac.susx.mlcl.byblo;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
-import uk.ac.susx.mlcl.byblo.io.FeatureRecord;
-import uk.ac.susx.mlcl.byblo.io.FeatureSink;
-import uk.ac.susx.mlcl.byblo.io.EntryRecord;
-import uk.ac.susx.mlcl.byblo.io.EntrySink;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureRecord;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSink;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntryRecord;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySink;
 import uk.ac.susx.mlcl.byblo.io.EntryFeatureRecord;
 import uk.ac.susx.mlcl.byblo.io.EntryFeatureSource;
 import uk.ac.susx.mlcl.lib.Checks;
@@ -276,13 +276,13 @@ public class CountTask extends AbstractTask implements Serializable {
         if (entriesFile.exists() && LOG.isWarnEnabled())
             LOG.warn("The entries file already exists and will be overwritten.");
 
-        EntrySink entriesink = null;
+        WeightedEntrySink entriesink = null;
         final int n = entryFreqList.size();
         try {
-            entriesink = new EntrySink(entriesFile, charset, entryIndex);
+            entriesink = new WeightedEntrySink(entriesFile, charset, entryIndex);
             int i = 0;
             for (final Int2IntMap.Entry entry : entryFreqList) {
-                entriesink.write(new EntryRecord(
+                entriesink.write(new WeightedEntryRecord(
                         entry.getIntKey(),
                         //                        entry.getIntKey(),
                         //                        entryUniqueContexts.get(entry.getIntKey()).size(),
@@ -326,14 +326,14 @@ public class CountTask extends AbstractTask implements Serializable {
         if (featuresFile.exists() && LOG.isWarnEnabled())
             LOG.warn("The contexts file already exists and will be overwritten.");
 
-        FeatureSink contextSink = null;
+        WeightedFeatureSink contextSink = null;
         final int n = contextFreqList.size();
         try {
-            contextSink = new FeatureSink(featuresFile, charset,
+            contextSink = new WeightedFeatureSink(featuresFile, charset,
                     featureIdex);
             int i = 0;
             for (final Int2IntMap.Entry context : contextFreqList) {
-                contextSink.write(new FeatureRecord(
+                contextSink.write(new WeightedFeatureRecord(
                         context.getIntKey(),
                         context.getIntValue()));
                 if ((++i % PROGRESS_INTERVAL == 0 || i == n) && LOG.

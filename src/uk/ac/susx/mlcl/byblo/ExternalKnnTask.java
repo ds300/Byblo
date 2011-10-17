@@ -30,6 +30,8 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
+import uk.ac.susx.mlcl.lib.tasks.SortTask;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import uk.ac.susx.mlcl.lib.tasks.Task;

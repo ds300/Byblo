@@ -32,20 +32,21 @@ package uk.ac.susx.mlcl.byblo.io;
 
 import com.google.common.base.Objects;
 import java.io.Serializable;
+import uk.ac.susx.mlcl.lib.collect.IWeighted;
 
 /**
- * <tt>FeatureRecord</tt> objects represent a single instance of a feature used
- * to measure the similarity between thesaurus entries. A <tt>FeatureRecord</tt> 
+ * <tt>WeightedFeatureRecord</tt> objects represent a single instance of a feature used
+ * to measure the similarity between thesaurus entries. A <tt>WeightedFeatureRecord</tt> 
  * consists of a <tt>featureId</tt>, and a <tt>weight</tt> estimated from the 
  * source corpus. The weighting is usually the features frequency, but it could 
  * be anything.
  * 
- * <p>Instances of <tt>FeatureRecord</tt> are immutable.<p>
+ * <p>Instances of <tt>WeightedFeatureRecord</tt> are immutable.<p>
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public final class FeatureRecord 
-    implements Serializable, Comparable<FeatureRecord> {
+public final class WeightedFeatureRecord 
+    implements Serializable, Comparable<WeightedFeatureRecord>, IWeighted {
 
     private static final long serialVersionUID = 63617210012669024L;
 
@@ -53,7 +54,7 @@ public final class FeatureRecord
 
     private double weight;
 
-    public FeatureRecord(final int featureId, final double weight) {
+    public WeightedFeatureRecord(final int featureId, final double weight) {
         this.featureId = featureId;
         this.weight = weight;
     }
@@ -61,7 +62,7 @@ public final class FeatureRecord
     /**
      * Constructor used during de-serialization.
      */
-    protected FeatureRecord() {
+    protected WeightedFeatureRecord() {
     }
 
 
@@ -90,10 +91,10 @@ public final class FeatureRecord
             return true;
         if (obj == null || getClass() != obj.getClass())
             return false;
-        return equals((FeatureRecord) obj);
+        return equals((WeightedFeatureRecord) obj);
     }
     
-    public boolean equals(FeatureRecord other) {
+    public boolean equals(WeightedFeatureRecord other) {
         return this.getFeatureId() == other.getFeatureId();
     }
 
@@ -109,7 +110,7 @@ public final class FeatureRecord
     }
 
     @Override
-    public int compareTo(FeatureRecord that) {
+    public int compareTo(WeightedFeatureRecord that) {
         return this.getFeatureId() - that.getFeatureId();
     }
 }

@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
-import java.util.Collection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -61,6 +60,8 @@ public abstract class AbstractTSVSink<T>
 
     private final Writer out;
 
+    private final File file;
+
     public AbstractTSVSink(File file, Charset charset) throws FileNotFoundException, IOException {
         if (file == null)
             throw new NullPointerException("file == null");
@@ -69,14 +70,11 @@ public abstract class AbstractTSVSink<T>
         out = new BufferedWriter(
                 new OutputStreamWriter(
                 new FileOutputStream(file), charset));
-
+        this.file = file;
     }
 
-    @Override
-    public void writeAll(Collection<? extends T> objs) throws IOException {
-        for (T o : objs) {
-            write(o);
-        }
+    public File getFile() {
+        return file;
     }
 
     protected void writeRecordDelimiter() throws IOException {

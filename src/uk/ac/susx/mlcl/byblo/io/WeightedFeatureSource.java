@@ -43,15 +43,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * A <tt>FeatureSource</tt> object is used to retrieve {@link FeatureRecord} 
+ * A <tt>WeightedFeatureSource</tt> object is used to retrieve {@link WeightedFeatureRecord} 
  * objects from a flat file. 
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  * @see FeatureSink
  */
-public class FeatureSource extends AbstractTSVSource<FeatureRecord> {
+public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureRecord> {
 
-    private static final Log LOG = LogFactory.getLog(FeatureSource.class);
+    private static final Log LOG = LogFactory.getLog(WeightedFeatureSource.class);
 
     private final ObjectIndex<String> stringIndex;
 
@@ -61,9 +61,9 @@ public class FeatureSource extends AbstractTSVSource<FeatureRecord> {
 
     private long count = 0;
 
-    private FeatureRecord previousRecord = null;
+    private WeightedFeatureRecord previousRecord = null;
 
-    public FeatureSource(File file, Charset charset,
+    public WeightedFeatureSource(File file, Charset charset,
             ObjectIndex<String> stringIndex)
             throws FileNotFoundException, IOException {
         super(file, charset);
@@ -72,7 +72,7 @@ public class FeatureSource extends AbstractTSVSource<FeatureRecord> {
         this.stringIndex = stringIndex;
     }
 
-    public FeatureSource(File file, Charset charset)
+    public WeightedFeatureSource(File file, Charset charset)
             throws FileNotFoundException, IOException {
         this(file, charset, new ObjectIndex<String>());
     }
@@ -82,7 +82,7 @@ public class FeatureSource extends AbstractTSVSource<FeatureRecord> {
     }
 
     @Override
-    public FeatureRecord read() throws IOException {
+    public WeightedFeatureRecord read() throws IOException {
         final int featureId;
         if (previousRecord == null) {
             featureId = stringIndex.get(parseString());
@@ -102,7 +102,7 @@ public class FeatureSource extends AbstractTSVSource<FeatureRecord> {
         cardinality = Math.max(cardinality, featureId + 1);
         weightSum += weight;
         ++count;
-        final FeatureRecord record = new FeatureRecord(featureId, weight);
+        final WeightedFeatureRecord record = new WeightedFeatureRecord(featureId, weight);
 
         if (isValueDelimiterNext()) {
             parseValueDelimiter();
@@ -132,7 +132,7 @@ public class FeatureSource extends AbstractTSVSource<FeatureRecord> {
     public Int2DoubleMap readAll() throws IOException {
         Int2DoubleMap featureFrequenciesMap = new Int2DoubleOpenHashMap();
         while (this.hasNext()) {
-            FeatureRecord entry = this.read();
+            WeightedFeatureRecord entry = this.read();
             if (featureFrequenciesMap.containsKey(entry.getFeatureId())) {
                 // XXX: This shouldn't happen any-more, becaue perl is no longer used.
                 //
@@ -172,12 +172,12 @@ public class FeatureSource extends AbstractTSVSource<FeatureRecord> {
 
     public static boolean equal(File a, File b, Charset charset) throws IOException {
         final ObjectIndex<String> stringIndex = new ObjectIndex<String>();
-        final FeatureSource srcA = new FeatureSource(a, charset, stringIndex);
-        final FeatureSource srcB = new FeatureSource(b, charset, stringIndex);
+        final WeightedFeatureSource srcA = new WeightedFeatureSource(a, charset, stringIndex);
+        final WeightedFeatureSource srcB = new WeightedFeatureSource(b, charset, stringIndex);
         boolean equal = true;
         while (equal && srcA.hasNext() && srcB.hasNext()) {
-            final FeatureRecord recA = srcA.read();
-            final FeatureRecord recB = srcB.read();
+            final WeightedFeatureRecord recA = srcA.read();
+            final WeightedFeatureRecord recB = srcB.read();
             equal = recA.getFeatureId() == recB.getFeatureId()
                     && recA.getWeight() == recB.getWeight();
         }

@@ -30,6 +30,7 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
 import uk.ac.susx.mlcl.lib.tasks.CopyTask;
 import uk.ac.susx.mlcl.lib.tasks.SortTask;
 import uk.ac.susx.mlcl.lib.io.TempFileFactoryConverter;
@@ -52,29 +53,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.susx.mlcl.byblo.ChunkTask;
-import uk.ac.susx.mlcl.byblo.ChunkTask;
-import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
-import uk.ac.susx.mlcl.byblo.MergeTask;
-import uk.ac.susx.mlcl.byblo.MergeTask;
-import uk.ac.susx.mlcl.byblo.NeighbourComparator;
-import uk.ac.susx.mlcl.byblo.NeighbourComparator;
-import uk.ac.susx.mlcl.lib.tasks.AbstractParallelTask;
-import uk.ac.susx.mlcl.lib.tasks.CopyTask;
-import uk.ac.susx.mlcl.lib.tasks.CopyTask;
-import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
-import uk.ac.susx.mlcl.lib.tasks.SortTask;
-import uk.ac.susx.mlcl.lib.tasks.SortTask;
-import uk.ac.susx.mlcl.lib.tasks.Task;
 
 /**
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
 @Parameters(commandDescription = "Sort a file.")
-public class ExternalSortTask extends AbstractParallelTask {
+public class ExternalSortCommand extends AbstractParallelTask {
 
-    private static final Log LOG = LogFactory.getLog(ExternalSortTask.class);
+    private static final Log LOG = LogFactory.getLog(ExternalSortCommand.class);
 
     private static final int DEFAULT_MAX_CHUNK_SIZE = ChunkTask.DEFAULT_MAX_CHUNK_SIZE;
 
@@ -103,7 +90,7 @@ public class ExternalSortTask extends AbstractParallelTask {
 
     private Queue<File> mergeQueue;
 
-    public ExternalSortTask(File src, File dst, Charset charset,
+    public ExternalSortCommand(File src, File dst, Charset charset,
             Comparator<String> comparator,
             int maxChunkSize) {
         this(src, dst, charset);
@@ -111,13 +98,13 @@ public class ExternalSortTask extends AbstractParallelTask {
         setMaxChunkSize(maxChunkSize);
     }
 
-    public ExternalSortTask(File src, File dst, Charset charset) {
+    public ExternalSortCommand(File src, File dst, Charset charset) {
         setSourceFile(src);
         setDestinationFile(dst);
         setCharset(charset);
     }
 
-    public ExternalSortTask() {
+    public ExternalSortCommand() {
         super();
     }
 

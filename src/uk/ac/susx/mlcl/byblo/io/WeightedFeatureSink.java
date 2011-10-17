@@ -40,32 +40,32 @@ import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 
 /**
- * An <tt>EntrySink</tt> object is used to store {@link EntryRecord} objects in 
- * a flat file. 
+ * An <tt>WeightedFeatureSink</tt> object is used to store {@link WeightedFeatureRecord} objects
+ * in a flat file. 
  * 
  * <p>The basic file format is Tab-Separated-Values (TSV) where records are 
  * delimited by new-lines, and values are delimited by tabs. Two variants are
- * supported: verbose and compact. In verbose mode each {@link EntryRecord} 
+ * supported: verbose and compact. In verbose mode each {@link WeightedFeatureRecord} 
  * corresponds to a single TSV record; i.e one line per object consisting of an
- * entry and it's weight. In compact mode each TSV record consists of a single
- * entry followed by the weights of all sequentially written {@link EntryRecord}
- * objects that share the same entry.</p>
+ * feature and it's weight. In compact mode each TSV record consists of a single
+ * feature followed by the weights of all sequentially written 
+ * {@link WeightedFeatureRecord} objects that share the same feature.</p>
  * 
  * Verbose mode example:
  * <pre>
- *      entry1  weight1
- *      entry1  weight2
- *      entry2  weight3
- *      entry3  weight4
- *      enrty3  weight5
- *      enrty3  weight6
+ *      feature1  weight1
+ *      feature1  weight2
+ *      feature2  weight3
+ *      feature3  weight4
+ *      feature3  weight5
+ *      feature3  weight6
  * </pre>
  * 
  * Equivalent compact mode example:
  * <pre>
- *      entry1  weight1 weight2
- *      entry2  weight3
- *      entry3  weight4 weight5 weight6
+ *      feature1  weight1 weight2
+ *      feature2  weight3
+ *      feature3  weight4 weight5 weight6
  * </pre>
  * 
  * <p>Compact mode is the default behavior, since it can reduce file sizes by 
@@ -73,21 +73,30 @@ import java.text.DecimalFormat;
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public class EntrySink extends AbstractTSVSink<EntryRecord>
-        implements Sink<EntryRecord> {
-
-    private final DecimalFormat f = new DecimalFormat("###0.0#####;-###0.0#####");
+public class WeightedFeatureSink
+        extends AbstractTSVSink<WeightedFeatureRecord>
+        implements Sink<WeightedFeatureRecord> {
 
     private final ObjectIndex<String> stringIndex;
 
+    private final DecimalFormat f = new DecimalFormat("###0.0#####;-###0.0#####");
+
     private boolean compactFormatEnabled = true;
 
-    private EntryRecord previousRecord = null;
+    private WeightedFeatureRecord previousRecord = null;
 
-    public EntrySink(File file, Charset charset, ObjectIndex<String> stringIndex)
+    public WeightedFeatureSink(
+            File file, Charset charset, ObjectIndex<String> stringIndex)
             throws FileNotFoundException, IOException {
         super(file, charset);
+
+        if (stringIndex == null)
+            throw new NullPointerException("stringIndex == null");
         this.stringIndex = stringIndex;
+    }
+
+    public WeightedFeatureSink(File file, Charset charset) throws FileNotFoundException, IOException {
+        this(file, charset, new ObjectIndex<String>());
     }
 
     public boolean isCompactFormatEnabled() {
@@ -98,41 +107,38 @@ public class EntrySink extends AbstractTSVSink<EntryRecord>
         this.compactFormatEnabled = compactFormatEnabled;
     }
 
+    public final ObjectIndex<String> getStringIndex() {
+        return stringIndex;
+    }
+
     @Override
-    public void write(final EntryRecord record) throws IOException {
+    public void write(WeightedFeatureRecord record) throws IOException {
         if (isCompactFormatEnabled())
             writeCompact(record);
         else
             writeVerbose(record);
     }
 
-    @Override
-    public void close() throws IOException {
-        if (isCompactFormatEnabled() && previousRecord != null)
-            writeRecordDelimiter();
-        super.close();
-    }
-
-    private void writeVerbose(final EntryRecord record) throws IOException {
-        writeEntry(record.getEntryId());
+    private void writeVerbose(WeightedFeatureRecord record) throws IOException {
+        writeFeature(record.getFeatureId());
         writeValueDelimiter();
         writeWeight(record.getWeight());
         writeRecordDelimiter();
     }
 
-    private void writeCompact(final EntryRecord record) throws IOException {
+    private void writeCompact(WeightedFeatureRecord record) throws IOException {
         if (previousRecord == null) {
-            writeEntry(record.getEntryId());
-        } else if (previousRecord.getEntryId() != record.getEntryId()) {
+            writeFeature(record.getFeatureId());
+        } else if (previousRecord.getFeatureId() != record.getFeatureId()) {
             writeRecordDelimiter();
-            writeEntry(record.getEntryId());
+            writeFeature(record.getFeatureId());
         }
         writeValueDelimiter();
         writeWeight(record.getWeight());
         previousRecord = record;
     }
 
-    private void writeEntry(int id) throws IOException {
+    private void writeFeature(int id) throws IOException {
         writeString(stringIndex.get(id));
     }
 
@@ -141,5 +147,12 @@ public class EntrySink extends AbstractTSVSink<EntryRecord>
             super.writeInt((int) weight);
         else
             super.writeString(f.format(weight));
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (isCompactFormatEnabled() && previousRecord != null)
+            writeRecordDelimiter();
+        super.close();
     }
 }

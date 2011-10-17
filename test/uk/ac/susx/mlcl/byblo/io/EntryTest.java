@@ -51,8 +51,8 @@ import static uk.ac.susx.mlcl.TestConstants.*;
 public class EntryTest {
 
     private void copyE(File a, File b, boolean compact) throws FileNotFoundException, IOException {
-        EntrySource aSrc = new EntrySource(a, DEFAULT_CHARSET);
-        EntrySink bSink = new EntrySink(b, DEFAULT_CHARSET,
+        WeightedEntrySource aSrc = new WeightedEntrySource(a, DEFAULT_CHARSET);
+        WeightedEntrySink bSink = new WeightedEntrySink(b, DEFAULT_CHARSET,
                 aSrc.getStringIndex());
         bSink.setCompactFormatEnabled(compact);
 
@@ -83,14 +83,14 @@ public class EntryTest {
     }
 
     public void testRandomAccess(File file) throws FileNotFoundException, IOException {
-        final Map<Tell, EntryRecord> hist =
-                new HashMap<Tell, EntryRecord>();
+        final Map<Tell, WeightedEntryRecord> hist =
+                new HashMap<Tell, WeightedEntryRecord>();
 
-        EntrySource src = new EntrySource(file, DEFAULT_CHARSET);
+        WeightedEntrySource src = new WeightedEntrySource(file, DEFAULT_CHARSET);
         {
             while (src.hasNext()) {
                 final Tell pos = src.position();
-                final EntryRecord record = src.read();
+                final WeightedEntryRecord record = src.read();
 
                 System.out.println(pos.toString() + ": " + record.toString(src.
                         getStringIndex()));
@@ -106,7 +106,7 @@ public class EntryTest {
 
             for (int i = 0; i < 10; i++) {
                 final Tell pos = positions.get(rand.nextInt(positions.size()));
-                final EntryRecord expected = hist.get(pos);
+                final WeightedEntryRecord expected = hist.get(pos);
 
                 System.out.println("expected tell: " + pos);
                 System.out.println("expected: " + expected.toString(src.
@@ -117,7 +117,7 @@ public class EntryTest {
                 assertTrue(src.hasNext());
                 assertEquals(pos, src.position());
 
-                EntryRecord actual = src.read();
+                WeightedEntryRecord actual = src.read();
                 System.out.println("actual tell: " + src.position());
                 System.out.println("actual: " + actual.toString(src.
                         getStringIndex()));

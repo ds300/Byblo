@@ -566,7 +566,7 @@ checkOutputDirs $tempdir
 
 [[ -n "$allpairsChunkSize" ]] ||
     die "Chunk-size for all-pairs is not set."
-(( "$allpairsChunkSize" >= 100 )) ||
+(( "$allpairsChunkSize" >= 10 )) ||
     die "Expecting allpairs chunk-size >= 100, found '$allpairsChunkSize'."
 
 [[ -n "$measure" ]] || die "Measure for all-pairs is not set" 

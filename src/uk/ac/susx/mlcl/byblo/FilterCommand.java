@@ -39,12 +39,12 @@ import com.google.common.base.Predicate;
 import static uk.ac.susx.mlcl.lib.Predicates2.*;
 import com.google.common.io.Files;
 import uk.ac.susx.mlcl.lib.DoubleConverter;
-import uk.ac.susx.mlcl.byblo.io.FeatureRecord;
-import uk.ac.susx.mlcl.byblo.io.FeatureSink;
-import uk.ac.susx.mlcl.byblo.io.FeatureSource;
-import uk.ac.susx.mlcl.byblo.io.EntryRecord;
-import uk.ac.susx.mlcl.byblo.io.EntrySink;
-import uk.ac.susx.mlcl.byblo.io.EntrySource;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureRecord;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSink;
+import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSource;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntryRecord;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySink;
+import uk.ac.susx.mlcl.byblo.io.WeightedEntrySource;
 import uk.ac.susx.mlcl.lib.MiscUtil;
 import uk.ac.susx.mlcl.lib.ObjectIndex;
 import uk.ac.susx.mlcl.lib.Predicates2;
@@ -77,11 +77,11 @@ import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureSource;
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
 @Parameters(commandDescription = "Filter a set of frequency files")
-public class FilterTask extends AbstractTask implements Serializable {
+public class FilterCommand extends AbstractTask implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static final Log LOG = LogFactory.getLog(FilterTask.class);
+    private static final Log LOG = LogFactory.getLog(FilterCommand.class);
 
     /**
      * Number of records to read or write between progress updates.
@@ -167,11 +167,11 @@ public class FilterTask extends AbstractTask implements Serializable {
     /*
      * === INTERNAL ===
      */
-    private Predicate<EntryRecord> acceptEntry = alwaysTrue();
+    private Predicate<WeightedEntryRecord> acceptEntry = alwaysTrue();
 
     private Predicate<WeightedEntryFeatureRecord> acceptEntryFeature = alwaysTrue();
 
-    private Predicate<FeatureRecord> acceptFeature = alwaysTrue();
+    private Predicate<WeightedFeatureRecord> acceptFeature = alwaysTrue();
 
     private boolean entryFilterRequired = false;
 
@@ -189,10 +189,10 @@ public class FilterTask extends AbstractTask implements Serializable {
 
     private File activeFeaturesFile;
 
-    public FilterTask() {
+    public FilterCommand() {
     }
 
-    public FilterTask(
+    public FilterCommand(
             File inputEntryFeaturesFile, File inputEntriesFile,
             File inputFeaturesFile, File outputEntryFeaturesFile,
             File outputEntriesFile, File outputFeaturesFile,
@@ -311,20 +311,20 @@ public class FilterTask extends AbstractTask implements Serializable {
 
         final IntSet rejected = new IntOpenHashSet();
 
-        EntrySource entriesSource = new EntrySource(
+        WeightedEntrySource entriesSource = new WeightedEntrySource(
                 activeEntriesFile, charset, entryIndex);
 
         File outputFile = tempFiles.createFile();
         outputFile.deleteOnExit();
 
-        EntrySink entriesSink = new EntrySink(outputFile, charset, entryIndex);
+        WeightedEntrySink entriesSink = new WeightedEntrySink(outputFile, charset, entryIndex);
 
         if (LOG.isInfoEnabled())
             LOG.info(
                     "Filtering entries from " + activeEntriesFile + " to " + outputFile + ".");
 
         while (entriesSource.hasNext()) {
-            EntryRecord entry = entriesSource.read();
+            WeightedEntryRecord entry = entriesSource.read();
             if (acceptEntry.apply(entry)) {
                 entriesSink.write(entry);
             } else {
@@ -426,13 +426,13 @@ public class FilterTask extends AbstractTask implements Serializable {
             throws FileNotFoundException, IOException {
         IntSet rejectedFeatures = new IntOpenHashSet();
 
-        FeatureSource featureSource = new FeatureSource(
+        WeightedFeatureSource featureSource = new WeightedFeatureSource(
                 activeFeaturesFile, charset, featureIndex);
 
         File outputFile = tempFiles.createFile();
         outputFile.deleteOnExit();
 
-        FeatureSink featureSink = new FeatureSink(
+        WeightedFeatureSink featureSink = new WeightedFeatureSink(
                 outputFile, charset, featureIndex);
 
         if (LOG.isInfoEnabled())
@@ -440,7 +440,7 @@ public class FilterTask extends AbstractTask implements Serializable {
                     "Filtering features from " + activeFeaturesFile + " to " + outputFile + ".");
 
         while (featureSource.hasNext()) {
-            FeatureRecord feature = featureSource.read();
+            WeightedFeatureRecord feature = featureSource.read();
 
             if (acceptFeature.apply(feature)) {
                 featureSink.write(feature);
@@ -559,11 +559,11 @@ public class FilterTask extends AbstractTask implements Serializable {
         this.outputEntriesFile = checkNotNull(outputEntriesFile);
     }
 
-    public Predicate<FeatureRecord> getAcceptFeatures() {
+    public Predicate<WeightedFeatureRecord> getAcceptFeatures() {
         return acceptFeature;
     }
 
-    public void setAcceptFeatures(Predicate<FeatureRecord> acceptFeature) {
+    public void setAcceptFeatures(Predicate<WeightedFeatureRecord> acceptFeature) {
         if (!acceptFeature.equals(this.acceptFeature)) {
             this.acceptFeature = acceptFeature;
             featureFilterRequired = true;
@@ -571,25 +571,25 @@ public class FilterTask extends AbstractTask implements Serializable {
     }
 
     public void addFeaturesMinimumFrequency(double threshold) {
-        setAcceptFeatures(Predicates2.<FeatureRecord>and(
+        setAcceptFeatures(Predicates2.<WeightedFeatureRecord>and(
                 getAcceptFeatures(),
                 compose(gte(threshold), featureFreq())));
     }
 
     public void addFeaturesMaximumFrequency(double threshold) {
-        setAcceptFeatures(Predicates2.<FeatureRecord>and(
+        setAcceptFeatures(Predicates2.<WeightedFeatureRecord>and(
                 getAcceptFeatures(),
                 compose(lte(threshold), featureFreq())));
     }
 
     public void addFeaturesFrequencyRange(double min, double max) {
-        setAcceptFeatures(Predicates2.<FeatureRecord>and(
+        setAcceptFeatures(Predicates2.<WeightedFeatureRecord>and(
                 getAcceptFeatures(),
                 compose(inRange(min, max), featureFreq())));
     }
 
     public void addFeaturesPattern(String pattern) {
-        setAcceptFeatures(Predicates2.<FeatureRecord>and(
+        setAcceptFeatures(Predicates2.<WeightedFeatureRecord>and(
                 getAcceptFeatures(),
                 compose(containsPattern(pattern), featureString())));
     }
@@ -600,7 +600,7 @@ public class FilterTask extends AbstractTask implements Serializable {
             final int id = featureIndex.get(string);
             featureIdSet.add(id);
         }
-        setAcceptFeatures(Predicates2.<FeatureRecord>and(
+        setAcceptFeatures(Predicates2.<WeightedFeatureRecord>and(
                 getAcceptFeatures(),
                 compose(in(featureIdSet), featureId())));
     }
@@ -611,7 +611,7 @@ public class FilterTask extends AbstractTask implements Serializable {
             final int id = featureIndex.get(string);
             featureIdSet.add(id);
         }
-        setAcceptFeatures(Predicates2.<FeatureRecord>and(
+        setAcceptFeatures(Predicates2.<WeightedFeatureRecord>and(
                 getAcceptFeatures(),
                 compose(not(in(featureIdSet)), featureId())));
 
@@ -647,11 +647,11 @@ public class FilterTask extends AbstractTask implements Serializable {
                 compose(inRange(min, max), entryFeatureFreq())));
     }
 
-    public Predicate<EntryRecord> getAcceptEntry() {
+    public Predicate<WeightedEntryRecord> getAcceptEntry() {
         return acceptEntry;
     }
 
-    public void setAcceptEntry(Predicate<EntryRecord> acceptEntry) {
+    public void setAcceptEntry(Predicate<WeightedEntryRecord> acceptEntry) {
         if (!acceptEntry.equals(this.acceptEntry)) {
             this.acceptEntry = acceptEntry;
             entryFilterRequired = true;
@@ -659,25 +659,25 @@ public class FilterTask extends AbstractTask implements Serializable {
     }
 
     public void addEntryMinimumFrequency(double threshold) {
-        setAcceptEntry(Predicates2.<EntryRecord>and(
+        setAcceptEntry(Predicates2.<WeightedEntryRecord>and(
                 getAcceptEntry(),
                 compose(gte(threshold), entryFreq())));
     }
 
     public void addEntryMaximumFrequency(double threshold) {
-        setAcceptEntry(Predicates2.<EntryRecord>and(
+        setAcceptEntry(Predicates2.<WeightedEntryRecord>and(
                 getAcceptEntry(),
                 compose(lte(threshold), entryFreq())));
     }
 
     public void addEntryFrequencyRange(double min, double max) {
-        setAcceptEntry(Predicates2.<EntryRecord>and(
+        setAcceptEntry(Predicates2.<WeightedEntryRecord>and(
                 getAcceptEntry(),
                 compose(inRange(min, max), entryFreq())));
     }
 
     public void addEntryPattern(String pattern) {
-        setAcceptEntry(Predicates2.<EntryRecord>and(
+        setAcceptEntry(Predicates2.<WeightedEntryRecord>and(
                 getAcceptEntry(),
                 compose(containsPattern(pattern), entryString())));
     }
@@ -688,7 +688,7 @@ public class FilterTask extends AbstractTask implements Serializable {
             final int id = entryIndex.get(string);
             entryIdSet.add(id);
         }
-        setAcceptEntry(Predicates2.<EntryRecord>and(
+        setAcceptEntry(Predicates2.<WeightedEntryRecord>and(
                 getAcceptEntry(),
                 compose(in(entryIdSet), entryId())));
 
@@ -700,7 +700,7 @@ public class FilterTask extends AbstractTask implements Serializable {
             final int id = entryIndex.get(string);
             entryIdSet.add(id);
         }
-        setAcceptEntry(Predicates2.<EntryRecord>and(
+        setAcceptEntry(Predicates2.<WeightedEntryRecord>and(
                 getAcceptEntry(),
                 compose(not(in(entryIdSet)), entryId())));
 
@@ -785,11 +785,11 @@ public class FilterTask extends AbstractTask implements Serializable {
     //
     // ==== FIELD EXTRACTION FUNCTIONS ====
     //
-    private Function<EntryRecord, Double> entryFreq() {
-        return new Function<EntryRecord, Double>() {
+    private Function<WeightedEntryRecord, Double> entryFreq() {
+        return new Function<WeightedEntryRecord, Double>() {
 
             @Override
-            public Double apply(EntryRecord input) {
+            public Double apply(WeightedEntryRecord input) {
                 return input.getWeight();
             }
 
@@ -800,11 +800,11 @@ public class FilterTask extends AbstractTask implements Serializable {
         };
     }
 
-    private Function<EntryRecord, Integer> entryId() {
-        return new Function<EntryRecord, Integer>() {
+    private Function<WeightedEntryRecord, Integer> entryId() {
+        return new Function<WeightedEntryRecord, Integer>() {
 
             @Override
-            public Integer apply(EntryRecord input) {
+            public Integer apply(WeightedEntryRecord input) {
                 return input.getEntryId();
             }
 
@@ -815,11 +815,11 @@ public class FilterTask extends AbstractTask implements Serializable {
         };
     }
 
-    private Function<EntryRecord, String> entryString() {
-        return new Function<EntryRecord, String>() {
+    private Function<WeightedEntryRecord, String> entryString() {
+        return new Function<WeightedEntryRecord, String>() {
 
             @Override
-            public String apply(EntryRecord input) {
+            public String apply(WeightedEntryRecord input) {
                 return entryIndex.get(input.getEntryId());
             }
 
@@ -830,11 +830,11 @@ public class FilterTask extends AbstractTask implements Serializable {
         };
     }
 
-    private Function<FeatureRecord, Double> featureFreq() {
-        return new Function<FeatureRecord, Double>() {
+    private Function<WeightedFeatureRecord, Double> featureFreq() {
+        return new Function<WeightedFeatureRecord, Double>() {
 
             @Override
-            public Double apply(FeatureRecord input) {
+            public Double apply(WeightedFeatureRecord input) {
                 return input.getWeight();
             }
 
@@ -845,11 +845,11 @@ public class FilterTask extends AbstractTask implements Serializable {
         };
     }
 
-    private Function<FeatureRecord, Integer> featureId() {
-        return new Function<FeatureRecord, Integer>() {
+    private Function<WeightedFeatureRecord, Integer> featureId() {
+        return new Function<WeightedFeatureRecord, Integer>() {
 
             @Override
-            public Integer apply(FeatureRecord input) {
+            public Integer apply(WeightedFeatureRecord input) {
                 return input.getFeatureId();
             }
 
@@ -860,11 +860,11 @@ public class FilterTask extends AbstractTask implements Serializable {
         };
     }
 
-    private Function<FeatureRecord, String> featureString() {
-        return new Function<FeatureRecord, String>() {
+    private Function<WeightedFeatureRecord, String> featureString() {
+        return new Function<WeightedFeatureRecord, String>() {
 
             @Override
-            public String apply(FeatureRecord input) {
+            public String apply(WeightedFeatureRecord input) {
                 return featureIndex.get(input.getFeatureId());
             }
 

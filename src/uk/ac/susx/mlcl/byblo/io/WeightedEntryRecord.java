@@ -33,18 +33,19 @@ package uk.ac.susx.mlcl.byblo.io;
 import com.google.common.base.Objects;
 import java.io.Serializable;
 import uk.ac.susx.mlcl.lib.ObjectIndex;
+import uk.ac.susx.mlcl.lib.collect.IWeighted;
 
 /**
- * <tt>EntryRecord</tt> objects represent a single instance of a thesaurus
+ * <tt>WeightedEntryRecord</tt> objects represent a single instance of a thesaurus
  * entry, with a weighting estimated from the source corpus. The weighting is 
  * usually the entries frequency, but it could be anything.
  * 
- * <p>Instances of <tt>EntryRecord</tt> are immutable.<p>
+ * <p>Instances of <tt>WeightedEntryRecord</tt> are immutable.<p>
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public class EntryRecord
-        implements Serializable, Comparable<EntryRecord> {
+public class WeightedEntryRecord
+        implements Serializable, Comparable<WeightedEntryRecord>, IWeighted {
 
     private static final long serialVersionUID = 1L;
 
@@ -52,7 +53,7 @@ public class EntryRecord
 
     private double weight;
 
-    public EntryRecord(final int entryId, final double weight) {
+    public WeightedEntryRecord(final int entryId, final double weight) {
         this.entryId = entryId;
         this.weight = weight;
     }
@@ -60,7 +61,7 @@ public class EntryRecord
     /**
      * Constructor used during de-serialization.
      */
-    protected EntryRecord() {
+    protected WeightedEntryRecord() {
     }
 
     public int getEntryId() {
@@ -88,10 +89,10 @@ public class EntryRecord
             return true;
         if (obj == null || getClass() != obj.getClass())
             return false;
-        return equals((EntryRecord) obj);
+        return equals((WeightedEntryRecord) obj);
     }
 
-    public boolean equals(EntryRecord other) {
+    public boolean equals(WeightedEntryRecord other) {
         return this.getEntryId() == other.getEntryId();
     }
 
@@ -113,7 +114,7 @@ public class EntryRecord
     }
 
     @Override
-    public int compareTo(EntryRecord that) {
+    public int compareTo(WeightedEntryRecord that) {
         return this.getEntryId() - that.getEntryId();
     }
 }

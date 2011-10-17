@@ -63,7 +63,7 @@ public class Byblo {
         knn(ExternalKnnTask.class),
         allpairs(AllPairsTask.class),
         count(ExternalCountTask.class),
-        filter(FilterTask.class);
+        filter(FilterCommand.class);
 
         private Class<? extends Task> taskClass;
 

@@ -28,20 +28,19 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.byblo;
+package uk.ac.susx.mlcl.lib.tasks;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 import uk.ac.susx.mlcl.lib.Checks;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
-import java.io.File;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.io.Sink;
+import uk.ac.susx.mlcl.lib.io.Source;
+import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
 
 /**
  * Task that takes a single input file and sorts it according to some comparator,
@@ -49,30 +48,62 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-@Parameters(commandDescription = "Sort a file.")
-public class SortTask extends CopyTask {
+public class SortTask<T> extends AbstractTask {
 
     private static final Log LOG = LogFactory.getLog(SortTask.class);
 
-    private Comparator<String> comparator;
+    private Source<T> source;
 
-    @Parameter(names = {"-c", "--charset"},
-               description = "The character set encoding to use for both input and output files.")
+    private Sink<T> sink;
+
+    private Comparator<T> comparator = null;
+
     private Charset charset = IOUtil.DEFAULT_CHARSET;
 
-    public SortTask(File sourceFile, File destinationFile, Charset charset,
-            Comparator<String> comparator) {
-        super(sourceFile, destinationFile);
+    public SortTask(Source<T> source, Sink<T> sink,
+            Comparator<T> comparator, Charset charset) {
         setCharset(charset);
+        setComparator(comparator);
+        setSource(source);
+        setSink(sink);
+    }
+
+    public SortTask(Source<T> source, Sink<T> sink) {
+        setSource(source);
+        setSink(sink);
+    }
+
+    public SortTask() {
+    }
+
+    public final Comparator<T> getComparator() {
+        return comparator;
+    }
+
+    /**
+     * If set to null the use the natural ordering of the items.
+     * @param comparator 
+     */
+    public final void setComparator(Comparator<T> comparator) {
         this.comparator = comparator;
     }
 
-    public SortTask(File sourceFile, File destinationFile, Charset charset) {
-        this(sourceFile, destinationFile, charset, null);
+    public final Sink<T> getSink() {
+        return sink;
     }
 
-    public SortTask(File sourceFile, File destinationFile) {
-        this(sourceFile, destinationFile, IOUtil.DEFAULT_CHARSET);
+    public final void setSink(Sink<T> sink) {
+        Checks.checkNotNull(sink);
+        this.sink = sink;
+    }
+
+    public final Source<T> getSource() {
+        return source;
+    }
+
+    public final void setSource(Source<T> sourceA) {
+        Checks.checkNotNull(sourceA);
+        this.source = sourceA;
     }
 
     public final Charset getCharset() {
@@ -84,26 +115,15 @@ public class SortTask extends CopyTask {
         this.charset = charset;
     }
 
-    public final Comparator<String> getComparator() {
-        return comparator;
-    }
-
-    public final void setComparator(Comparator<String> comparator) {
-        this.comparator = comparator;
-    }
-
-    public boolean isComparatorSet() {
-        return getComparator() != null;
-    }
-
     @Override
     protected void runTask() throws Exception {
         if (LOG.isInfoEnabled())
-            LOG.info("Sorting file in memory, from \"" + getSrcFile()
-                    + "\" to \"" + getDstFile() + "\".");
-        final List<String> lines = new ArrayList<String>();
-        IOUtil.readAllLines(getSrcFile(), getCharset(), lines);
-        Collections.sort(lines, getComparator());
-        IOUtil.writeAllLines(getDstFile(), getCharset(), lines);
+            LOG.info("Sorting file in memory, from \"" + getSource()
+                    + "\" to \"" + getSink() + "\".");
+
+        List<T> list = IOUtil.readAll(getSource());
+        Collections.sort(list, getComparator());
+        IOUtil.writeAll(list, getSink());
     }
+
 }
