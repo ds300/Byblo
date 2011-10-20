@@ -39,7 +39,7 @@ import uk.ac.susx.mlcl.lib.Checks;
 import uk.ac.susx.mlcl.lib.io.FileFactory;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
 import uk.ac.susx.mlcl.lib.io.TempFileFactory;
-import uk.ac.susx.mlcl.lib.tasks.AbstractParallelTask;
+import uk.ac.susx.mlcl.lib.command.AbstractParallelCommand;
 import uk.ac.susx.mlcl.lib.tasks.Task;
 import java.io.File;
 import java.io.IOException;
@@ -52,14 +52,14 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.susx.mlcl.byblo.ChunkTask;
-import uk.ac.susx.mlcl.byblo.ChunkTask;
+import uk.ac.susx.mlcl.byblo.xxxChunkCommand;
+import uk.ac.susx.mlcl.byblo.xxxChunkCommand;
 import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
-import uk.ac.susx.mlcl.byblo.MergeTask;
-import uk.ac.susx.mlcl.byblo.MergeTask;
+import uk.ac.susx.mlcl.lib.tasks.MergeTask;
+import uk.ac.susx.mlcl.lib.tasks.MergeTask;
 import uk.ac.susx.mlcl.byblo.NeighbourComparator;
 import uk.ac.susx.mlcl.byblo.NeighbourComparator;
-import uk.ac.susx.mlcl.lib.tasks.AbstractParallelTask;
+import uk.ac.susx.mlcl.lib.command.AbstractParallelCommand;
 import uk.ac.susx.mlcl.lib.tasks.CopyTask;
 import uk.ac.susx.mlcl.lib.tasks.CopyTask;
 import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
@@ -72,11 +72,11 @@ import uk.ac.susx.mlcl.lib.tasks.Task;
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
 @Parameters(commandDescription = "Sort a file.")
-public class ExternalSortTask extends AbstractParallelTask {
+public class ExternalSortTask extends AbstractParallelCommand {
 
     private static final Log LOG = LogFactory.getLog(ExternalSortTask.class);
 
-    private static final int DEFAULT_MAX_CHUNK_SIZE = ChunkTask.DEFAULT_MAX_CHUNK_SIZE;
+    private static final int DEFAULT_MAX_CHUNK_SIZE = xxxChunkCommand.DEFAULT_MAX_CHUNK_SIZE;
 
     @Parameter(names = {"-C", "--chunk-size"},
                description = "Number of lines that will be read and sorted in RAM at one time (per thread). Larger values increase memory usage and performace.")
@@ -193,11 +193,11 @@ public class ExternalSortTask extends AbstractParallelTask {
 
         BlockingQueue<File> chunkQueue = new ArrayBlockingQueue<File>(2);
 
-        ChunkTask chunkTask = new ChunkTask(getSrcFile(), getCharset(),
+        xxxChunkCommand chunkTask = new xxxChunkCommand(getSrcFile(), getCharset(),
                 getMaxChunkSize());
         chunkTask.setDstFileQueue(chunkQueue);
         chunkTask.setChunkFileFactory(tempFileFactory);
-        Future<ChunkTask> chunkFuture = submitTask(chunkTask);
+        Future<xxxChunkCommand> chunkFuture = submitTask(chunkTask);
 
         // Immidiately poll the chunk task so we can start handling other
         // completed tasks

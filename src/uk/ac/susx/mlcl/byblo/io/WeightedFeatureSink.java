@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 
 /**
  * An <tt>WeightedFeatureSink</tt> object is used to store {@link WeightedFeatureRecord} objects
@@ -74,8 +75,8 @@ import java.text.DecimalFormat;
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
 public class WeightedFeatureSink
-        extends AbstractTSVSink<WeightedFeatureRecord>
-        implements Sink<WeightedFeatureRecord> {
+        extends AbstractTSVSink<Weighted<Feature>>
+        implements Sink<Weighted<Feature>> {
 
     private final ObjectIndex<String> stringIndex;
 
@@ -83,7 +84,7 @@ public class WeightedFeatureSink
 
     private boolean compactFormatEnabled = true;
 
-    private WeightedFeatureRecord previousRecord = null;
+    private Weighted<Feature> previousRecord = null;
 
     public WeightedFeatureSink(
             File file, Charset charset, ObjectIndex<String> stringIndex)
@@ -112,26 +113,26 @@ public class WeightedFeatureSink
     }
 
     @Override
-    public void write(WeightedFeatureRecord record) throws IOException {
+    public void write(Weighted<Feature> record) throws IOException {
         if (isCompactFormatEnabled())
             writeCompact(record);
         else
             writeVerbose(record);
     }
 
-    private void writeVerbose(WeightedFeatureRecord record) throws IOException {
-        writeFeature(record.getFeatureId());
+    private void writeVerbose(Weighted<Feature> record) throws IOException {
+        writeFeature(record.get().getFeatureId());
         writeValueDelimiter();
         writeWeight(record.getWeight());
         writeRecordDelimiter();
     }
 
-    private void writeCompact(WeightedFeatureRecord record) throws IOException {
+    private void writeCompact(Weighted<Feature> record) throws IOException {
         if (previousRecord == null) {
-            writeFeature(record.getFeatureId());
-        } else if (previousRecord.getFeatureId() != record.getFeatureId()) {
+            writeFeature(record.get().getFeatureId());
+        } else if (previousRecord.get().getFeatureId() != record.get().getFeatureId()) {
             writeRecordDelimiter();
-            writeFeature(record.getFeatureId());
+            writeFeature(record.get().getFeatureId());
         }
         writeValueDelimiter();
         writeWeight(record.getWeight());

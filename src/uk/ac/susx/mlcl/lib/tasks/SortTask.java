@@ -30,9 +30,7 @@
  */
 package uk.ac.susx.mlcl.lib.tasks;
 
-import uk.ac.susx.mlcl.lib.Checks;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -40,37 +38,28 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import uk.ac.susx.mlcl.lib.io.Sink;
 import uk.ac.susx.mlcl.lib.io.Source;
-import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
 
 /**
  * Task that takes a single input file and sorts it according to some comparator,
  * then writes the results to an output file.
  * 
+ * @param <T> 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-public class SortTask<T> extends AbstractTask {
+public class SortTask<T> extends AbstractPipeTask<T> {
 
     private static final Log LOG = LogFactory.getLog(SortTask.class);
 
-    private Source<T> source;
-
-    private Sink<T> sink;
-
     private Comparator<T> comparator = null;
 
-    private Charset charset = IOUtil.DEFAULT_CHARSET;
-
     public SortTask(Source<T> source, Sink<T> sink,
-            Comparator<T> comparator, Charset charset) {
-        setCharset(charset);
-        setComparator(comparator);
-        setSource(source);
+                    Comparator<T> comparator) {
+        super(source, sink);
         setSink(sink);
     }
 
     public SortTask(Source<T> source, Sink<T> sink) {
-        setSource(source);
-        setSink(sink);
+        super(source, sink);
     }
 
     public SortTask() {
@@ -88,33 +77,6 @@ public class SortTask<T> extends AbstractTask {
         this.comparator = comparator;
     }
 
-    public final Sink<T> getSink() {
-        return sink;
-    }
-
-    public final void setSink(Sink<T> sink) {
-        Checks.checkNotNull(sink);
-        this.sink = sink;
-    }
-
-    public final Source<T> getSource() {
-        return source;
-    }
-
-    public final void setSource(Source<T> sourceA) {
-        Checks.checkNotNull(sourceA);
-        this.source = sourceA;
-    }
-
-    public final Charset getCharset() {
-        return charset;
-    }
-
-    public final void setCharset(Charset charset) {
-        Checks.checkNotNull(charset);
-        this.charset = charset;
-    }
-
     @Override
     protected void runTask() throws Exception {
         if (LOG.isInfoEnabled())
@@ -125,5 +87,4 @@ public class SortTask<T> extends AbstractTask {
         Collections.sort(list, getComparator());
         IOUtil.writeAll(list, getSink());
     }
-
 }

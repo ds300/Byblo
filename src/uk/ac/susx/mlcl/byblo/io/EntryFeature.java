@@ -32,85 +32,74 @@ package uk.ac.susx.mlcl.byblo.io;
 
 import com.google.common.base.Objects;
 import java.io.Serializable;
-import uk.ac.susx.mlcl.lib.collect.IWeighted;
 
 /**
- * <tt>WeightedFeatureRecord</tt> objects represent a single instance of a feature used
- * to measure the similarity between thesaurus entries. A <tt>WeightedFeatureRecord</tt> 
- * consists of a <tt>featureId</tt>, and a <tt>weight</tt> estimated from the 
- * source corpus. The weighting is usually the features frequency, but it could 
- * be anything.
+ * <tt>EntryFeatureRecord</tt> objects represent a single instance of an 
+ * entry/feature pair, i.e the occurrence of a feature with and entry. Typically
+ * this will be associated with a frequency use to estimate the likelihood of
+ * the feature in the entries context.
  * 
- * <p>Instances of <tt>WeightedFeatureRecord</tt> are immutable.<p>
+ * <p>Instances of <tt>EntryFeatureRecord</tt> are immutable.<p>
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public final class WeightedFeatureRecord 
-    implements Serializable, Comparable<WeightedFeatureRecord>, IWeighted {
+public class EntryFeature
+        implements Serializable, Comparable<EntryFeature> {
 
-    private static final long serialVersionUID = 63617210012669024L;
+    private static final long serialVersionUID = 1L;
+
+    private int entryId;
 
     private int featureId;
 
-    private double weight;
-
-    public WeightedFeatureRecord(final int featureId, final double weight) {
+    public EntryFeature(final int entryId, final int featureId) {
+        this.entryId = entryId;
         this.featureId = featureId;
-        this.weight = weight;
     }
 
     /**
      * Constructor used during de-serialization.
      */
-    protected WeightedFeatureRecord() {
+    protected EntryFeature() {
     }
 
+    public final int getEntryId() {
+        return entryId;
+    }
 
     public final int getFeatureId() {
-        return featureId;
-    }
-
-    public final double getWeight() {
-        return weight;
-    }
-
-    /**
-     * Indicates whether some other object is "equal to" this one.
-     * 
-     * <p>Note that only the <tt>featureId</tt> field is used for equality. I.e 
-     * two objects with the same <tt>featureId</tt>, but differing weights 
-     * <em>will</em> be consider equal.</p>
-     * 
-     * @param   obj   the reference object with which to compare.
-     * @return  <code>true</code> if this object is the same as the obj
-     *          argument; <code>false</code> otherwise.
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if(obj == this)
-            return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
-        return equals((WeightedFeatureRecord) obj);
-    }
-    
-    public boolean equals(WeightedFeatureRecord other) {
-        return this.getFeatureId() == other.getFeatureId();
-    }
-
-    @Override
-    public int hashCode() {
         return featureId;
     }
 
     @Override
     public String toString() {
         return Objects.toStringHelper(this).
-                add("id", featureId).add("weight", weight).toString();
+                add("entryId", entryId).add("featureId", featureId).toString();
     }
 
     @Override
-    public int compareTo(WeightedFeatureRecord that) {
-        return this.getFeatureId() - that.getFeatureId();
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        return equals((EntryFeature) obj);
+    }
+
+    public boolean equals(EntryFeature other) {
+        return this.getEntryId() == other.getEntryId()
+                && this.getFeatureId() == other.getFeatureId();
+    }
+
+    @Override
+    public int hashCode() {
+        return 47 * (47 * 3 + this.entryId) + this.featureId;
+    }
+
+    @Override
+    public int compareTo(EntryFeature that) {
+        return this.getEntryId() != that.getEntryId()
+                ? this.getEntryId() - that.getEntryId()
+                : this.getFeatureId() - that.getFeatureId();
     }
 }

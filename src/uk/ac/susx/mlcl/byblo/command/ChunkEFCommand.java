@@ -28,18 +28,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.byblo;
+package uk.ac.susx.mlcl.byblo.command;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
+import java.io.Closeable;
+import java.io.IOException;
 import uk.ac.susx.mlcl.lib.Checks;
-import uk.ac.susx.mlcl.lib.MiscUtil;
 import uk.ac.susx.mlcl.lib.io.FileFactory;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
+import uk.ac.susx.mlcl.lib.io.Sink;
 import uk.ac.susx.mlcl.lib.io.TempFileFactory;
-import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -48,31 +47,40 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.byblo.io.EntryFeature;
+import uk.ac.susx.mlcl.byblo.io.EntryFeatureSink;
+import uk.ac.susx.mlcl.byblo.io.EntryFeatureSource;
+import uk.ac.susx.mlcl.lib.ObjectIndex;
+import uk.ac.susx.mlcl.lib.command.AbstractCommand;
+import uk.ac.susx.mlcl.lib.io.SinkFactory;
+import uk.ac.susx.mlcl.lib.io.Source;
+import uk.ac.susx.mlcl.lib.io.TempFileFactoryConverter;
+import uk.ac.susx.mlcl.lib.tasks.ChunkTask;
 
 /**
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-@Parameters(
-commandDescription = "Split a large file into a number of smaller files.")
-public class ChunkTask extends AbstractTask {
+@Parameters(commandDescription = "Split a large file into a number of smaller files.")
+public class ChunkEFCommand extends AbstractCommand {
 
-    private static final Log LOG = LogFactory.getLog(ChunkTask.class);
+    private static final Log LOG = LogFactory.getLog(ChunkEFCommand.class);
 
     public static final int DEFAULT_MAX_CHUNK_SIZE = 5000000;
 
-    public static final File DEFAULT_SOURCE_FILE = new File("-");
-
+    @Parameter(names = {"-T", "--temporary-directory"},
+               description = "Directory used for holding temporary files.",
+               converter = TempFileFactoryConverter.class)
     private FileFactory chunkFileFactory =
             new TempFileFactory();
 
     @Parameter(names = {"-C", "--max-chunk-size"},
-               description = "Number of lines that will be read and sorted in RAM at one time (per thread). Larger values increase memory usage and performace.")
+               description = "Number of lines that will be read into RAM at one time (per thread). Larger values increase memory usage and performace.")
     private int maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
 
     @Parameter(names = {"-i", "--input-file"},
                description = "Source file. If this argument is not given, or if it is \"-\", then stdin will be read.")
-    private File sourceFile = DEFAULT_SOURCE_FILE;
+    private File sourceFile;
 
     private BlockingQueue<File> dstFileQueue = new LinkedBlockingDeque<File>();
 
@@ -80,106 +88,34 @@ public class ChunkTask extends AbstractTask {
                description = "Character encoding to use.")
     private Charset charset = IOUtil.DEFAULT_CHARSET;
 
+    public ChunkEFCommand() {
+    }
+
+    public ChunkEFCommand(File srcFile, Charset charset) {
+        setSrcFile(srcFile);
+        setCharset(charset);
+    }
+
+    public ChunkEFCommand(File srcFile, Charset charset, int maxChunkSize) {
+        setSrcFile(srcFile);
+        setMaxChunkSize(maxChunkSize);
+        setCharset(charset);
+    }
+
+    public final void setMaxChunkSize(int maxChunkSize) {
+        Checks.checkRangeIncl(maxChunkSize, 1, Integer.MAX_VALUE);
+        this.maxChunkSize = maxChunkSize;
+    }
+
     public final Charset getCharset() {
         return charset;
     }
 
     public final void setCharset(Charset charset) {
         Checks.checkNotNull(charset);
+        if(!charset.canEncode())
+            throw new IllegalArgumentException("Charset " + charset + " cannot encode.");
         this.charset = charset;
-    }
-
-    public ChunkTask() {
-    }
-
-    public ChunkTask(File srcFile, Charset charset) {
-        setSrcFile(srcFile);
-        setCharset(charset);
-    }
-
-    public ChunkTask(File srcFile, Charset charset, int maxChunkSize) {
-        setSrcFile(srcFile);
-        setMaxChunkSize(maxChunkSize);
-        setCharset(charset);
-    }
-
-    @Override
-    protected void initialiseTask() throws Exception {
-    }
-
-    @Override
-    protected void finaliseTask() throws Exception {
-    }
-
-    public BlockingQueue<File> getDstFileQueue() {
-        return dstFileQueue;
-    }
-
-    public void setDstFileQueue(BlockingQueue<File> dstFileQueue) {
-        if (dstFileQueue == null)
-            throw new NullPointerException("dstFileQueue is null");
-        this.dstFileQueue = dstFileQueue;
-    }
-
-    @Override
-    protected void runTask() throws Exception {
-        if (LOG.isInfoEnabled())
-            LOG.info("Chunking from file \"" + sourceFile + "\"; max-chunk-size=" + MiscUtil.
-                    humanReadableBytes(getMaxChunkSize()) + ".");
-
-        BufferedReader reader = null;
-        BufferedWriter writer = null;
-        File tmp = null;
-
-        final int nlBytes = System.getProperty("line.separator").getBytes().length;
-
-        try {
-            reader = IOUtil.openReader(sourceFile, charset);
-            int chunk = 1;
-            int chunkBytesWritten = 0;
-            String line = reader.readLine();
-            int lineBytes = line == null ? 0
-                    : line.getBytes().length + nlBytes;
-
-            while (line != null) {
-
-                try {
-                    tmp = chunkFileFactory.createFile();
-                    if (LOG.isDebugEnabled())
-                        LOG.debug("Producing chunk " + chunk + " to file \"" + tmp
-                                + "\".");
-                    writer = IOUtil.openWriter(tmp, charset);
-
-                    do {
-                        writer.write(line);
-                        writer.newLine();
-                        chunkBytesWritten += lineBytes;
-                        line = reader.readLine();
-                        lineBytes = line == null ? 0 : line.getBytes().length + nlBytes;
-                    } while (line != null && chunkBytesWritten + lineBytes < maxChunkSize);
-
-                } finally {
-
-                    if (writer != null) {
-                        writer.flush();
-                        writer.close();
-                    }
-                    if (tmp != null)
-                        dstFileQueue.put(tmp);
-                    chunkBytesWritten = 0;
-                    chunk++;
-                }
-            }
-        } finally {
-            if (reader != null)
-                reader.close();
-        }
-    }
-
-    public final void setMaxChunkSize(int maxChunkSize) {
-        if (maxChunkSize <= 0)
-            throw new IllegalArgumentException("maxChunkSize <= 0");
-        this.maxChunkSize = maxChunkSize;
     }
 
     public int getMaxChunkSize() {
@@ -205,6 +141,54 @@ public class ChunkTask extends AbstractTask {
     }
 
     public void setChunkFileFactory(FileFactory chunkFileFactory) {
+        Checks.checkNotNull("chunkFileFactory", chunkFileFactory);
         this.chunkFileFactory = chunkFileFactory;
     }
+
+//    public BlockingQueue<File> getDstFileQueue() {
+//        return dstFileQueue;
+//    }
+//
+//    public void setDstFileQueue(BlockingQueue<File> dstFileQueue) {
+//        if (dstFileQueue == null)
+//            throw new NullPointerException("dstFileQueue is null");
+//        this.dstFileQueue = dstFileQueue;
+//    }
+//
+    @Override
+    public void run() throws Exception {
+        if (LOG.isInfoEnabled())
+            LOG.info("Chunking from file \"" + sourceFile
+                    + "\" to " + chunkFileFactory
+                    + "; max-chunk-size=" + getMaxChunkSize() 
+                    + ".");
+
+        final ObjectIndex<String> entryIndex = new ObjectIndex<String>();
+        final ObjectIndex<String> featureIndex = new ObjectIndex<String>();
+        final Source<EntryFeature> src = new EntryFeatureSource(
+                sourceFile, charset, entryIndex, featureIndex);
+
+        final SinkFactory<EntryFeature> sinkFactory = new SinkFactory<EntryFeature>() {
+
+            @Override
+            public Sink<EntryFeature> getSink() throws IOException {
+                File sinkFile = chunkFileFactory.createFile();
+                dstFileQueue.add(sinkFile);
+                Sink<EntryFeature> sink = new EntryFeatureSink(
+                        sinkFile, charset, entryIndex, featureIndex);
+                return sink;
+            }
+        };
+
+        ChunkTask<EntryFeature> chunkTask = new ChunkTask<EntryFeature>(
+                src, sinkFactory);
+        chunkTask.setMaxChunkSize(maxChunkSize);
+
+        chunkTask.run();
+
+        if (src instanceof Closeable)
+            ((Closeable) src).close();
+        
+    }
+    
 }

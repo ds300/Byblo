@@ -16,9 +16,10 @@ import uk.ac.susx.mlcl.lib.io.Source;
 
 /**
  *
+ * @param <T> 
  * @author hiam20
  */
-public class FilterTask<T> extends CopyTask<T> {
+public class FilterTask<T> extends AbstractPipeTask<T> {
 
     private static final Log LOG = LogFactory.getLog(FilterTask.class);
 
@@ -28,6 +29,12 @@ public class FilterTask<T> extends CopyTask<T> {
 
     private Set<T> rejectedEntries = new ObjectOpenHashSet<T>();
 
+    private boolean storeResults = true;
+
+    private int numAccepted = 0;
+
+    private int numRejected = 0;
+
     public FilterTask() {
     }
 
@@ -36,18 +43,9 @@ public class FilterTask<T> extends CopyTask<T> {
     }
 
     public FilterTask(Source<T> source, Sink<T> sink,
-            Comparator<T> comparator, Predicate<T> accept) {
-        super(source, sink, comparator);
-    }
-
-    public Predicate<T> getAccept() {
-        return accept;
-    }
-
-    public void setAccept(Predicate<T> acceptPredicate) {
-        if (!acceptPredicate.equals(this.accept)) {
-            this.accept = acceptPredicate;
-        }
+                      Comparator<T> comparator, Predicate<T> accept) {
+        super(source, sink);
+        setAccept(accept);
     }
 
     @Override
@@ -60,18 +58,48 @@ public class FilterTask<T> extends CopyTask<T> {
             final T record = getSource().read();
             if (accept.apply(record)) {
                 getSink().write(record);
-                acceptedEntries.add(record);
+                ++numAccepted;
+                if (storeResults)
+                    acceptedEntries.add(record);
             } else {
-                rejectedEntries.add(record);
+                ++numRejected;
+                if (storeResults)
+                    rejectedEntries.add(record);
             }
         }
     }
 
-    public long getNumAccepted() {
-        return acceptedEntries.size();
+    public final Predicate<T> getAccept() {
+        return accept;
     }
 
-    public long getNumRejected() {
-        return rejectedEntries.size();
+    public final void setAccept(final Predicate<T> acceptPredicate) {
+        if (!acceptPredicate.equals(this.accept)) {
+            this.accept = acceptPredicate;
+        }
+    }
+
+    public final boolean hasRejected() {
+        return !getRejected().isEmpty();
+    }
+
+    public final boolean hasAccepted() {
+        return !getAccepted().isEmpty();
+    }
+
+    public final Set<T> getRejected() {
+        return rejectedEntries;
+    }
+
+    public final Set<T> getAccepted() {
+        return acceptedEntries;
+    }
+
+    public final long getNumAccepted() {
+        return numAccepted;
+    }
+
+    public final long getNumRejected() {
+        return numRejected;
     }
 }

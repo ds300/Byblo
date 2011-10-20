@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 import uk.ac.susx.mlcl.lib.io.Lexer.Tell;
 
 /**
@@ -50,7 +51,7 @@ import uk.ac.susx.mlcl.lib.io.Lexer.Tell;
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  * @see EntrySink
  */
-public class WeightedEntrySource extends AbstractTSVSource<WeightedEntryRecord> {
+public class WeightedEntrySource extends AbstractTSVSource<Weighted<Entry>> {
 
     private static final Log LOG = LogFactory.getLog(WeightedEntrySource.class);
 
@@ -68,7 +69,7 @@ public class WeightedEntrySource extends AbstractTSVSource<WeightedEntryRecord> 
 
     private int count = 0;
 
-    private WeightedEntryRecord previousRecord = null;
+    private Weighted<Entry> previousRecord = null;
 
     public WeightedEntrySource(File file, Charset charset,
             ObjectIndex<String> stringIndex)
@@ -124,13 +125,13 @@ public class WeightedEntrySource extends AbstractTSVSource<WeightedEntryRecord> 
     }
 
     @Override
-    public WeightedEntryRecord read() throws IOException {
+    public Weighted<Entry> read() throws IOException {
         final int entryId;
         if (previousRecord == null) {
             entryId = stringIndex.get(parseString());
             parseValueDelimiter();
         } else {
-            entryId = previousRecord.getEntryId();
+            entryId = previousRecord.get().getEntryId();
         }
 
         if (!hasNext() || isDelimiterNext()) {
@@ -145,7 +146,7 @@ public class WeightedEntrySource extends AbstractTSVSource<WeightedEntryRecord> 
         weightSum += weight;
         weightMax = Math.max(weightMax, weight);
         ++count;
-        final WeightedEntryRecord record = new WeightedEntryRecord(entryId, weight);
+        final Weighted<Entry> record = new Weighted<Entry>(new Entry(entryId), weight);
 
         if (isValueDelimiterNext()) {
             parseValueDelimiter();
@@ -163,27 +164,27 @@ public class WeightedEntrySource extends AbstractTSVSource<WeightedEntryRecord> 
     public Int2DoubleMap readAll() throws IOException {
         Int2DoubleMap entityFrequenciesMap = new Int2DoubleOpenHashMap();
         while (this.hasNext()) {
-            WeightedEntryRecord entry = this.read();
-            if (entityFrequenciesMap.containsKey(entry.getEntryId())) {
+            Weighted<Entry> entry = this.read();
+            if (entityFrequenciesMap.containsKey(entry.get().getEntryId())) {
                 // If we encounter the same WeightedEntryRecord more than once, it means
                 // the perl has decided two strings are not-equal, which java
                 // thinks are equal ... so we need to merge the records:
 
                 // TODO: Not true any more.. remove this code?
 
-                final int id = entry.getEntryId();
+                final int id = entry.get().getEntryId();
                 final double oldFreq = entityFrequenciesMap.get(id);
                 final double newFreq = oldFreq + entry.getWeight();
 
                 if (LOG.isWarnEnabled())
-                    LOG.warn("Found duplicate Entry \"" + stringIndex.get(entry.
+                    LOG.warn("Found duplicate Entry \"" + stringIndex.get(entry.get().
                             getEntryId()) + "\" (id=" + id
                             + ") in entries file. Merging records. Old frequency = "
                             + oldFreq + ", new frequency = " + newFreq + ".");
 
                 entityFrequenciesMap.put(id, newFreq);
             }
-            entityFrequenciesMap.put(entry.getEntryId(), entry.getWeight());
+            entityFrequenciesMap.put(entry.get().getEntryId(), entry.getWeight());
         }
         return entityFrequenciesMap;
     }
@@ -206,9 +207,9 @@ public class WeightedEntrySource extends AbstractTSVSource<WeightedEntryRecord> 
         final WeightedEntrySource srcB = new WeightedEntrySource(b, charset, stringIndex);
         boolean equal = true;
         while (equal && srcA.hasNext() && srcB.hasNext()) {
-            final WeightedEntryRecord recA = srcA.read();
-            final WeightedEntryRecord recB = srcB.read();
-            equal = recA.getEntryId() == recB.getEntryId()
+            final Weighted<Entry> recA = srcA.read();
+            final Weighted<Entry> recB = srcB.read();
+            equal = recA.get().getEntryId() == recB.get().getEntryId()
                     && recA.getWeight() == recB.getWeight();
         }
         return equal && srcA.hasNext() == srcB.hasNext();

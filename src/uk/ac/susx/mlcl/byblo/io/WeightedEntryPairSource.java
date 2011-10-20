@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 
 /**
  * A <tt>WeightedEntryPairSource</tt> object is used to retrieve
@@ -46,12 +47,12 @@ import java.nio.charset.Charset;
  * @see WeightedEntryPairSink
  */
 public class WeightedEntryPairSource
-        extends AbstractTSVSource<WeightedEntryPairRecord>
-        implements Source<WeightedEntryPairRecord> {
+        extends AbstractTSVSource<Weighted<EntryPair>>
+        implements Source<Weighted<EntryPair>> {
 
     private final ObjectIndex<String> entryIndex;
 
-    private WeightedEntryPairRecord previousRecord = null;
+    private Weighted<EntryPair> previousRecord = null;
 
     public WeightedEntryPairSource(
             File file, Charset charset,
@@ -73,13 +74,13 @@ public class WeightedEntryPairSource
     }
 
     @Override
-    public WeightedEntryPairRecord read() throws IOException {
+    public Weighted<EntryPair> read() throws IOException {
         final int entryId1;
         if (previousRecord == null) {
             entryId1 = readEntry();
             parseValueDelimiter();
         } else {
-            entryId1 = previousRecord.getEntry1Id();
+            entryId1 = previousRecord.get().getEntry1Id();
         }
 
         if (!hasNext() || isDelimiterNext()) {
@@ -92,8 +93,8 @@ public class WeightedEntryPairSource
         parseValueDelimiter();
         final double weight = readWight();
 
-        final WeightedEntryPairRecord record = new WeightedEntryPairRecord(
-                entryId1, entryId2, weight);
+        final Weighted<EntryPair> record = new Weighted<EntryPair>(
+                new EntryPair(entryId1, entryId2), weight);
 
         if (isValueDelimiterNext()) {
             parseValueDelimiter();
@@ -126,10 +127,10 @@ public class WeightedEntryPairSource
                 stringIndex);
         boolean equal = true;
         while (equal && srcA.hasNext() && srcB.hasNext()) {
-            final WeightedEntryPairRecord recA = srcA.read();
-            final WeightedEntryPairRecord recB = srcB.read();
-            equal = recA.getEntry1Id() == recB.getEntry1Id()
-                    && recA.getEntry2Id() == recB.getEntry2Id()
+            final Weighted<EntryPair> recA = srcA.read();
+            final Weighted<EntryPair> recB = srcB.read();
+            equal = recA.get().getEntry1Id() == recB.get().getEntry1Id()
+                    && recA.get().getEntry2Id() == recB.get().getEntry2Id()
                     && recA.getWeight() == recB.getWeight();
         }
         return equal && srcA.hasNext() == srcB.hasNext();

@@ -28,15 +28,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.byblo.tasks;
+package uk.ac.susx.mlcl.lib.tasks;
 
-import uk.ac.susx.mlcl.lib.tasks.SortTask;
-import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.susx.mlcl.byblo.io.WeightedEntryPairRecord;
 import uk.ac.susx.mlcl.lib.Checks;
+import uk.ac.susx.mlcl.lib.io.IOUtil;
 import uk.ac.susx.mlcl.lib.io.Sink;
 import uk.ac.susx.mlcl.lib.io.Source;
 
@@ -45,9 +45,10 @@ import uk.ac.susx.mlcl.lib.io.Source;
  * entry. Assumes the file is composed of entry, entry, weight triples that are
  * delimited by tabs.
  * 
+ * @param <T> 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-public class KnnTask extends SortTask<WeightedEntryPairRecord> {
+public class KnnTask<T> extends AbstractPipeTask<T> {
 
     private static final Log LOG = LogFactory.getLog(KnnTask.class);
 
@@ -55,19 +56,22 @@ public class KnnTask extends SortTask<WeightedEntryPairRecord> {
 
     private int k = DEFAULT_K;
 
-    public KnnTask(Source<WeightedEntryPairRecord> source,
-            Sink<WeightedEntryPairRecord> sink,
-            Comparator<WeightedEntryPairRecord> comparator,
-            Charset charset, int k) {
-        setCharset(charset);
-        setComparator(comparator);
+    private Comparator<T> boundryComparator;
+
+    private Comparator<T> distanceComparator;
+
+    public KnnTask(Source<T> source, Sink<T> sink,
+                   int k, Comparator<T> distanceComparator,
+                   Comparator<T> boundryComparator) {
+        super(source, sink);
+        setDistanceComparator(distanceComparator);
+        setBoundryComparator(boundryComparator);
         setSource(source);
         setSink(sink);
         setK(k);
     }
 
-    public KnnTask(Source<WeightedEntryPairRecord> source,
-            Sink<WeightedEntryPairRecord> sink) {
+    public KnnTask(Source<T> source, Sink<T> sink) {
         setSource(source);
         setSink(sink);
     }
@@ -84,27 +88,60 @@ public class KnnTask extends SortTask<WeightedEntryPairRecord> {
         this.k = k;
     }
 
+    public final Comparator<T> getBoundryComparator() {
+        return boundryComparator;
+    }
+
+    public final void setBoundryComparator(Comparator<T> boundryComparator) {
+        this.boundryComparator = boundryComparator;
+    }
+
+    public final Comparator<T> getDistanceComparator() {
+        return distanceComparator;
+    }
+
+    public final void setDistanceComparator(Comparator<T> distanceComparator) {
+        this.distanceComparator = distanceComparator;
+    }
+
     @Override
     protected void runTask() throws Exception {
         if (LOG.isInfoEnabled())
-            LOG.info("Running K-Nearest-Neighbours from \"" + getSource()
-                    + "\" to \"" + getSink() + "\".");
+            LOG.info("Running K-Nearest-Neighbours from \"" 
+                    + getSource() + "\" to \"" + getSink() + "\".");
+
+        final List<T> list = IOUtil.readAll(getSource());
 
 
-        int currentBaseEntry = -1;
-        int currentCount = -1;
-        while (getSource().hasNext()) {
-            WeightedEntryPairRecord record = getSource().read();
-            if (record.getEntry1Id() != currentBaseEntry) {
-                currentBaseEntry = record.getEntry1Id();
-                currentCount = 1;
-            } else {
-                currentCount++;
+        Collections.sort(list, combinedComparator(getBoundryComparator(),
+                                                  getDistanceComparator()));
+        T cluster = null;
+        int count = 0;
+
+        for (T record : list) {
+            if (cluster == null || boundryComparator.compare(record, cluster) != 0) {
+                cluster = record;
+                count = 0;
             }
+            ++count;
 
-            if (currentCount <= getK()) {
+            if (count <= getK()) {
                 getSink().write(record);
             }
         }
+
+        IOUtil.writeAll(list, getSink());
+    }
+
+    protected static <T> Comparator<T> combinedComparator(
+            final Comparator<T> a, final Comparator<T> b) {
+        return new Comparator<T>() {
+
+            @Override
+            public int compare(T x, T y) {
+                int c = a.compare(x, y);
+                return c != 0 ? c : b.compare(x, y);
+            }
+        };
     }
 }

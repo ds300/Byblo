@@ -32,74 +32,83 @@ package uk.ac.susx.mlcl.byblo.io;
 
 import com.google.common.base.Objects;
 import java.io.Serializable;
+import uk.ac.susx.mlcl.lib.ObjectIndex;
+import uk.ac.susx.mlcl.lib.collect.IWeighted;
 
 /**
- * <tt>EntryFeatureRecord</tt> objects represent a single instance of an 
- * entry/feature pair, i.e the occurrence of a feature with and entry. Typically
- * this will be associated with a frequency use to estimate the likelihood of
- * the feature in the entries context.
+ * <tt>WeightedEntryRecord</tt> objects represent a single instance of a thesaurus
+ * entry, with a weighting estimated from the source corpus. The weighting is 
+ * usually the entries frequency, but it could be anything.
  * 
- * <p>Instances of <tt>EntryFeatureRecord</tt> are immutable.<p>
+ * <p>Instances of <tt>WeightedEntryRecord</tt> are immutable.<p>
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public class EntryFeatureRecord
-        implements Serializable, Comparable<EntryFeatureRecord> {
+public class Entry implements Serializable, Comparable<Entry> {
 
     private static final long serialVersionUID = 1L;
 
     private int entryId;
 
-    private int featureId;
-
-    public EntryFeatureRecord(final int entryId, final int featureId) {
+    public Entry(final int entryId) {
         this.entryId = entryId;
-        this.featureId = featureId;
     }
 
     /**
      * Constructor used during de-serialization.
      */
-    protected EntryFeatureRecord() {
+    protected Entry() {
     }
 
-    public final int getEntryId() {
+    public int getEntryId() {
         return entryId;
     }
 
-    public final int getFeatureId() {
-        return featureId;
+  
+
+    /**
+     * Indicates whether some other object is "equal to" this one.
+     * 
+     * <p>Note that only the <tt>entryId</tt> field is used for equality. I.e  
+     * two objects with the same <tt>entryId</tt>, but differing weights 
+     * <em>will</em> be consider equal.</p>
+     * 
+     * @param   obj   the reference object with which to compare.
+     * @return  <code>true</code> if this object is the same as the obj
+     *          argument; <code>false</code> otherwise.
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this)
+            return true;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
+        return equals((Entry) obj);
+    }
+
+    public boolean equals(Entry other) {
+        return this.getEntryId() == other.getEntryId();
+    }
+
+    @Override
+    public int hashCode() {
+        return this.entryId;
     }
 
     @Override
     public String toString() {
         return Objects.toStringHelper(this).
-                add("entryId", entryId).add("featureId", featureId).toString();
+                add("id", entryId).toString();
+    }
+
+    public String toString(ObjectIndex<String> entryIndex) {
+        return Objects.toStringHelper(this).
+                add("entry", entryIndex.get(entryId)).
+                toString();
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null || getClass() != obj.getClass())
-            return false;
-        return equals((EntryFeatureRecord) obj);
-    }
-
-    public boolean equals(EntryFeatureRecord other) {
-        return this.getEntryId() == other.getEntryId()
-                && this.getFeatureId() == other.getFeatureId();
-    }
-
-    @Override
-    public int hashCode() {
-        return 47 * (47 * 3 + this.entryId) + this.featureId;
-    }
-
-    @Override
-    public int compareTo(EntryFeatureRecord that) {
-        return this.getEntryId() != that.getEntryId()
-                ? this.getEntryId() - that.getEntryId()
-                : this.getFeatureId() - that.getFeatureId();
+    public int compareTo(Entry that) {
+        return this.getEntryId() - that.getEntryId();
     }
 }

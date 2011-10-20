@@ -41,7 +41,7 @@ import static uk.ac.susx.mlcl.TestConstants.*;
  */
 public class ExternalKnnTaskTest {
 
-    private static final String subject = ExternalCountTask.class.getName();
+    private static final String subject = ExternalCountEFCommand.class.getName();
 
     @Test(timeout=2000)
     public void testRunOnFruit() throws Exception {

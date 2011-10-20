@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 
 /**
  * A <tt>WeightedFeatureSource</tt> object is used to retrieve {@link WeightedFeatureRecord} 
@@ -49,7 +50,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  * @see FeatureSink
  */
-public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureRecord> {
+public class WeightedFeatureSource extends AbstractTSVSource<Weighted<Feature>> {
 
     private static final Log LOG = LogFactory.getLog(WeightedFeatureSource.class);
 
@@ -61,7 +62,7 @@ public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureReco
 
     private long count = 0;
 
-    private WeightedFeatureRecord previousRecord = null;
+    private Weighted<Feature> previousRecord = null;
 
     public WeightedFeatureSource(File file, Charset charset,
             ObjectIndex<String> stringIndex)
@@ -82,13 +83,13 @@ public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureReco
     }
 
     @Override
-    public WeightedFeatureRecord read() throws IOException {
+    public Weighted<Feature> read() throws IOException {
         final int featureId;
         if (previousRecord == null) {
             featureId = stringIndex.get(parseString());
             parseValueDelimiter();
         } else {
-            featureId = previousRecord.getFeatureId();
+            featureId = previousRecord.get().getFeatureId();
         }
 
         if (!hasNext() || isDelimiterNext()) {
@@ -102,7 +103,7 @@ public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureReco
         cardinality = Math.max(cardinality, featureId + 1);
         weightSum += weight;
         ++count;
-        final WeightedFeatureRecord record = new WeightedFeatureRecord(featureId, weight);
+        final Weighted<Feature> record = new Weighted<Feature>(new Feature(featureId), weight);
 
         if (isValueDelimiterNext()) {
             parseValueDelimiter();
@@ -132,8 +133,8 @@ public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureReco
     public Int2DoubleMap readAll() throws IOException {
         Int2DoubleMap featureFrequenciesMap = new Int2DoubleOpenHashMap();
         while (this.hasNext()) {
-            WeightedFeatureRecord entry = this.read();
-            if (featureFrequenciesMap.containsKey(entry.getFeatureId())) {
+            Weighted<Feature> entry = this.read();
+            if (featureFrequenciesMap.containsKey(entry.get().getFeatureId())) {
                 // XXX: This shouldn't happen any-more, becaue perl is no longer used.
                 //
                 // If we encounter the same feature more than once, it means
@@ -141,7 +142,7 @@ public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureReco
                 // but the corrent stage thinks are equal 
                 // ... so we need to merge the records:
 
-                final int id = entry.getFeatureId();
+                final int id = entry.get().getFeatureId();
                 final double oldFreq = featureFrequenciesMap.get(id);
                 final double newFreq = oldFreq + entry.getWeight();
 
@@ -152,7 +153,7 @@ public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureReco
 
                 featureFrequenciesMap.put(id, newFreq);
             }
-            featureFrequenciesMap.put(entry.getFeatureId(), entry.getWeight());
+            featureFrequenciesMap.put(entry.get().getFeatureId(), entry.getWeight());
 
         }
         return featureFrequenciesMap;
@@ -176,9 +177,9 @@ public class WeightedFeatureSource extends AbstractTSVSource<WeightedFeatureReco
         final WeightedFeatureSource srcB = new WeightedFeatureSource(b, charset, stringIndex);
         boolean equal = true;
         while (equal && srcA.hasNext() && srcB.hasNext()) {
-            final WeightedFeatureRecord recA = srcA.read();
-            final WeightedFeatureRecord recB = srcB.read();
-            equal = recA.getFeatureId() == recB.getFeatureId()
+            final Weighted<Feature> recA = srcA.read();
+            final Weighted<Feature> recB = srcB.read();
+            equal = recA.get().getFeatureId() == recB.get().getFeatureId()
                     && recA.getWeight() == recB.getWeight();
         }
         return equal && srcA.hasNext() == srcB.hasNext();

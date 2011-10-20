@@ -28,50 +28,39 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.lib.tasks;
+package uk.ac.susx.mlcl.lib.command;
 
-import java.io.Serializable;
-import java.util.Comparator;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.Parameters;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
- * <p>Comparator decorator that reverses the operands.</p>
  *
- * <p>When used with a sorting operation this will typically reverse the sort
- * from ascending, to descending.</p>
- *
- * <p>Serialization is supported if, and only i, the encapsulated
- * {@link Comparator} is also serializable.</p>
- *
- * @param <T>
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public class ReverseComparator<T>
-        implements Comparator<T>, Serializable {
+@Parameters()
+public abstract class AbstractCommand {
 
-    public static final long serialVersionUID = 1L;
+    private static final Log LOG = LogFactory.getLog(AbstractCommand.class);
 
-    private final Comparator<T> inner;
-
-    public ReverseComparator(final Comparator<T> inner) {
-        this.inner = inner;
+    @Parameter(names = {"-h", "--help"},
+               description = "Display this help message.")
+    private boolean usageRequested = false;
+    
+    public AbstractCommand() {
     }
 
-    @Override
-    public int compare(final T o1, final T o2) {
-        return inner.compare(o2, o1);
+    public final boolean isUsageRequested() {
+        return usageRequested;
     }
 
-    public Comparator<T> getInner() {
-        return inner;
-    }
-
+    public abstract void run() throws Exception;
+   
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(getClass().getSimpleName());
-        builder.append('{');
-        builder.append("inner=").append(inner);
-        builder.append('}');
-        return builder.toString();
+        return "AbstractTask{"
+                + "usageRequested=" + isUsageRequested()
+                + '}';
     }
 }

@@ -30,9 +30,9 @@
  */
 package uk.ac.susx.mlcl.byblo.measure;
 
-import uk.ac.susx.mlcl.byblo.io.WeightedEntryPairRecord;
+import uk.ac.susx.mlcl.byblo.io.EntryPair;
 import com.google.common.io.Files;
-import uk.ac.susx.mlcl.byblo.Byblo;
+import uk.ac.susx.mlcl.byblo.Main;
 import java.io.File;
 import org.junit.Test;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntryPairSource;
@@ -55,7 +55,7 @@ public class CrMiTest {
         output.delete();
 
         enableExistTrapping();
-        Byblo.main(new String[]{
+        Main.main(new String[]{
                     "allpairs",
                     "--charset", "UTF-8",
                     "--measure", "CrMi",
@@ -126,7 +126,7 @@ public class CrMiTest {
         expectedOutput.delete();
 
         enableExistTrapping();
-        Byblo.main(new String[]{
+        Main.main(new String[]{
                     "allpairs",
                     "--charset", "UTF-8",
                     "--measure", "RecallMi",
@@ -135,7 +135,7 @@ public class CrMiTest {
                     "--input-entries", TEST_FRUIT_ENTRIES.toString(),
                     "--output", expectedOutput.toString()
                 });
-        Byblo.main(new String[]{
+        Main.main(new String[]{
                     "allpairs",
                     "--charset", "UTF-8",
                     "--measure", "CrMi",
@@ -166,7 +166,7 @@ public class CrMiTest {
         expectedOutput.delete();
 
         enableExistTrapping();
-        Byblo.main(new String[]{
+        Main.main(new String[]{
                     "allpairs",
                     "--charset", "UTF-8",
                     "--measure", "RecallMi",
@@ -176,7 +176,7 @@ public class CrMiTest {
                     "--input-entries", TEST_FRUIT_ENTRIES.toString(),
                     "--output", expectedOutput.toString()
                 });
-        Byblo.main(new String[]{
+        Main.main(new String[]{
                     "allpairs",
                     "--charset", "UTF-8",
                     "--measure", "CrMi",
@@ -208,7 +208,7 @@ public class CrMiTest {
         expectedOutput.delete();
 
         enableExistTrapping();
-        Byblo.main(new String[]{
+        Main.main(new String[]{
                     "allpairs",
                     "--charset", "UTF-8",
                     "--measure", "DiceMi",
@@ -217,7 +217,7 @@ public class CrMiTest {
                     "--input-entries", TEST_FRUIT_ENTRIES.toString(),
                     "--output", expectedOutput.toString()
                 });
-        Byblo.main(new String[]{
+        Main.main(new String[]{
                     "allpairs",
                     "--charset", "UTF-8",
                     "--measure", "CrMi",
@@ -241,8 +241,8 @@ public class CrMiTest {
                 DEFAULT_CHARSET);
         
         while(expected.hasNext() && actual.hasNext()) {
-            WeightedEntryPairRecord e = expected.read();
-            WeightedEntryPairRecord a = actual.read();
+            EntryPair e = expected.read();
+            EntryPair a = actual.read();
             assertEquals(e.getEntry1Id(), a.getEntry1Id());
             assertEquals(e.getEntry2Id(), a.getEntry2Id());
         }

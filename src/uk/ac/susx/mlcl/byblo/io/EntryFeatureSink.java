@@ -73,8 +73,8 @@ import java.nio.charset.Charset;
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
 public class EntryFeatureSink
-        extends AbstractTSVSink<EntryFeatureRecord>
-        implements Sink<EntryFeatureRecord> {
+        extends AbstractTSVSink<EntryFeature>
+        implements Sink<EntryFeature> {
 
     private final ObjectIndex<String> entryIndex;
 
@@ -82,7 +82,7 @@ public class EntryFeatureSink
 
     private boolean compactFormatEnabled = true;
 
-    private EntryFeatureRecord previousRecord = null;
+    private EntryFeature previousRecord = null;
 
     public EntryFeatureSink(File file, Charset charset,
             ObjectIndex<String> entryIndex, ObjectIndex<String> featureIndex)
@@ -128,21 +128,21 @@ public class EntryFeatureSink
     }
 
     @Override
-    public void write(final EntryFeatureRecord record) throws IOException {
+    public void write(final EntryFeature record) throws IOException {
         if (isCompactFormatEnabled())
             writeCompact(record);
         else
             writeVerbose(record);
     }
 
-    private void writeVerbose(final EntryFeatureRecord record) throws IOException {
+    private void writeVerbose(final EntryFeature record) throws IOException {
         writeEntry(record.getEntryId());
         writeValueDelimiter();
         writeFeature(record.getFeatureId());
         writeRecordDelimiter();
     }
 
-    private void writeCompact(final EntryFeatureRecord record) throws IOException {
+    private void writeCompact(final EntryFeature record) throws IOException {
         if (previousRecord == null) {
             writeEntry(record.getEntryId());
         } else if (previousRecord.getEntryId() != record.getEntryId()) {

@@ -28,7 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.lib.tasks;
+package uk.ac.susx.mlcl.lib.command;
 
 import com.beust.jcommander.Parameter;
 import java.util.ArrayDeque;
@@ -42,14 +42,16 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
+import uk.ac.susx.mlcl.lib.tasks.Task;
 
 /**
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public abstract class AbstractParallelTask extends AbstractTask {
+public abstract class AbstractParallelCommand extends AbstractTask {
 
-    private static final Log LOG = LogFactory.getLog(AbstractParallelTask.class);
+    private static final Log LOG = LogFactory.getLog(AbstractParallelCommand.class);
 
     protected static final int DEFAULT_NUM_THREADS =
             Runtime.getRuntime().availableProcessors();
@@ -62,7 +64,7 @@ public abstract class AbstractParallelTask extends AbstractTask {
 
     private Queue<Future<? extends Task>> futureQueue;
 
-    public AbstractParallelTask() {
+    public AbstractParallelCommand() {
     }
 
     public void setNumThreads(int nThreads) {

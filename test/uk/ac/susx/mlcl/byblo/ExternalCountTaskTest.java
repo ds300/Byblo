@@ -47,16 +47,16 @@ import static uk.ac.susx.mlcl.ExitTrapper.*;
  */
 public class ExternalCountTaskTest {
 
-    private static final String subject = ExternalCountTask.class.getName();
+    private static final String subject = ExternalCountEFCommand.class.getName();
 
     private void runWithAPI(File inInst, File outE, File outF,
             File outEF, Charset charset, int chunkSize)
             throws Exception {
-        final ExternalCountTask countTask = new ExternalCountTask();
-        countTask.setInstancesFile(inInst);
+        final ExternalCountEFCommand countTask = new ExternalCountEFCommand();
+        countTask.setInputFile(inInst);
         countTask.setEntriesFile(outE);
         countTask.setFeaturesFile(outF);
-        countTask.setEntryFeaturesFile(outEF);
+        countTask.setOutputFile(outEF);
         countTask.setCharset(charset);
         countTask.setMaxChunkSize(chunkSize);
         countTask.run();
@@ -90,7 +90,7 @@ public class ExternalCountTaskTest {
         };
 
         enableExistTrapping();
-        Byblo.main(args);
+        Main.main(args);
         disableExitTrapping();
 
         assertTrue("Output files not created: " + outE, outE.exists());

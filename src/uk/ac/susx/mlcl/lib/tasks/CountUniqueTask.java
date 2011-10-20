@@ -32,47 +32,26 @@ package uk.ac.susx.mlcl.lib.tasks;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.susx.mlcl.lib.Checks;
 import uk.ac.susx.mlcl.lib.io.Sink;
 import uk.ac.susx.mlcl.lib.io.Source;
-import uk.ac.susx.mlcl.lib.io.Weighted;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 
 /**
  * Copy a source file to a destination.
  * 
+ * @param <T> 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-public class CountUniqueTask<T> extends AbstractTask {
+public class CountUniqueTask<T> extends AbstractFunctorTask<T, Weighted<T>> {
 
     private static final Log LOG = LogFactory.getLog(CountUniqueTask.class);
-
-    private Source<T> source;
-
-    private Sink<Weighted<T>> sink;
 
     public CountUniqueTask(
             Source<T> source,
             Sink<Weighted<T>> sink) {
+        super(source, sink);
         setSource(source);
         setSink(sink);
-    }
-
-    public final Sink<Weighted<T>> getSink() {
-        return sink;
-    }
-
-    public final void setSink(Sink<Weighted<T>> sink) {
-        Checks.checkNotNull(sink);
-        this.sink = sink;
-    }
-
-    public final Source<T> getSource() {
-        return source;
-    }
-
-    public final void setSource(Source<T> sourceA) {
-        Checks.checkNotNull(sourceA);
-        this.source = sourceA;
     }
 
     @Override

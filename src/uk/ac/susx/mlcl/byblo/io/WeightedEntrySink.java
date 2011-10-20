@@ -38,6 +38,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 
 /**
  * An <tt>WeightedEntrySink</tt> object is used to store {@link WeightedEntryRecord} objects in 
@@ -73,8 +74,8 @@ import java.text.DecimalFormat;
  * 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public class WeightedEntrySink extends AbstractTSVSink<WeightedEntryRecord>
-        implements Sink<WeightedEntryRecord> {
+public class WeightedEntrySink extends AbstractTSVSink<Weighted<Entry>>
+        implements Sink<Weighted<Entry>> {
 
     private final DecimalFormat f = new DecimalFormat("###0.0#####;-###0.0#####");
 
@@ -82,7 +83,7 @@ public class WeightedEntrySink extends AbstractTSVSink<WeightedEntryRecord>
 
     private boolean compactFormatEnabled = true;
 
-    private WeightedEntryRecord previousRecord = null;
+    private Weighted<Entry> previousRecord = null;
 
     public WeightedEntrySink(File file, Charset charset, ObjectIndex<String> stringIndex)
             throws FileNotFoundException, IOException {
@@ -99,7 +100,7 @@ public class WeightedEntrySink extends AbstractTSVSink<WeightedEntryRecord>
     }
 
     @Override
-    public void write(final WeightedEntryRecord record) throws IOException {
+    public void write(final Weighted<Entry> record) throws IOException {
         if (isCompactFormatEnabled())
             writeCompact(record);
         else
@@ -113,19 +114,19 @@ public class WeightedEntrySink extends AbstractTSVSink<WeightedEntryRecord>
         super.close();
     }
 
-    private void writeVerbose(final WeightedEntryRecord record) throws IOException {
-        writeEntry(record.getEntryId());
+    private void writeVerbose(final Weighted<Entry> record) throws IOException {
+        writeEntry(record.get().getEntryId());
         writeValueDelimiter();
         writeWeight(record.getWeight());
         writeRecordDelimiter();
     }
 
-    private void writeCompact(final WeightedEntryRecord record) throws IOException {
+    private void writeCompact(final Weighted<Entry> record) throws IOException {
         if (previousRecord == null) {
-            writeEntry(record.getEntryId());
-        } else if (previousRecord.getEntryId() != record.getEntryId()) {
+            writeEntry(record.get().getEntryId());
+        } else if (previousRecord.get().getEntryId() != record.get().getEntryId()) {
             writeRecordDelimiter();
-            writeEntry(record.getEntryId());
+            writeEntry(record.get().getEntryId());
         }
         writeValueDelimiter();
         writeWeight(record.getWeight());

@@ -28,7 +28,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  */
-package uk.ac.susx.mlcl.byblo;
+package uk.ac.susx.mlcl.lib.tasks;
 
 import java.io.Closeable;
 import uk.ac.susx.mlcl.lib.Checks;
@@ -52,6 +52,7 @@ import uk.ac.susx.mlcl.lib.io.Source;
  * Any file denoted by the name string "-" is assumed to be standard-in in the
  * case of source files, and standard out in the case of destination files..
  *
+ * @param <T> 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
 public class MergeTask<T extends Comparable<? super T>>
@@ -67,11 +68,8 @@ public class MergeTask<T extends Comparable<? super T>>
 
     private Comparator<T> comparator = null;
 
-    private Charset charset = IOUtil.DEFAULT_CHARSET;
-
     public MergeTask(Source<T> srcA, Source<T> srcB, Sink<T> sink,
-            Comparator<T> comparator, Charset charset) {
-        setCharset(charset);
+                     Comparator<T> comparator) {
         setComparator(comparator);
         setSourceA(sourceA);
         setSourceB(sourceB);
@@ -79,8 +77,8 @@ public class MergeTask<T extends Comparable<? super T>>
     }
 
     public MergeTask(Source<T> sourceA,
-            Source<T> sourceB,
-            Sink<T> sink) {
+                     Source<T> sourceB,
+                     Sink<T> sink) {
         setSourceA(sourceA);
         setSourceB(sourceB);
         setSink(sink);
@@ -126,23 +124,6 @@ public class MergeTask<T extends Comparable<? super T>>
     public final void setSourceB(Source<T> sourceB) {
         Checks.checkNotNull(sourceB);
         this.sourceB = sourceB;
-    }
-
-    public final Charset getCharset() {
-        return charset;
-    }
-
-    public final void setCharset(Charset charset) {
-        Checks.checkNotNull(charset);
-        this.charset = charset;
-    }
-
-    @Override
-    protected void initialiseTask() throws Exception {
-    }
-
-    @Override
-    protected void finaliseTask() throws Exception {
     }
 
     @Override

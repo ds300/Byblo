@@ -30,7 +30,6 @@
  */
 package uk.ac.susx.mlcl.lib.tasks;
 
-import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;

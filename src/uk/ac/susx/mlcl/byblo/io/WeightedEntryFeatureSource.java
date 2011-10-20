@@ -38,7 +38,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import uk.ac.susx.mlcl.lib.io.Weighted;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 
 /**
  * A <tt>WeightedEntryFeatureSource</tt> object is used to retrieve
@@ -48,8 +48,8 @@ import uk.ac.susx.mlcl.lib.io.Weighted;
  * @see WeightedEntryFeatureSink
  */
 public class WeightedEntryFeatureSource
-        extends AbstractTSVSource<Weighted<EntryFeatureRecord>>
-        implements Source<Weighted<EntryFeatureRecord>> {
+        extends AbstractTSVSource<Weighted<EntryFeature>>
+        implements Source<Weighted<EntryFeature>> {
 
     private final ObjectIndex<String> entryIndex;
 
@@ -57,7 +57,7 @@ public class WeightedEntryFeatureSource
 
     private long count = 0;
 
-    private Weighted<EntryFeatureRecord> previousRecord = null;
+    private Weighted<EntryFeature> previousRecord = null;
 
     public WeightedEntryFeatureSource(File file, Charset charset,
             ObjectIndex<String> entryIndex, ObjectIndex<String> featureIndex)
@@ -109,7 +109,7 @@ public class WeightedEntryFeatureSource
     }
 
     @Override
-    public Weighted<EntryFeatureRecord> read() throws IOException {
+    public Weighted<EntryFeature> read() throws IOException {
         final int entryId;
         if (previousRecord == null) {
             entryId = readEntry();
@@ -129,8 +129,8 @@ public class WeightedEntryFeatureSource
         final double weight = readWight();
         ++count;
 
-        final Weighted<EntryFeatureRecord> record = new Weighted<EntryFeatureRecord>(
-                new EntryFeatureRecord(entryId, featureId), weight);
+        final Weighted<EntryFeature> record = new Weighted<EntryFeature>(
+                new EntryFeature(entryId, featureId), weight);
 
         if (isValueDelimiterNext()) {
             parseValueDelimiter();
@@ -167,8 +167,8 @@ public class WeightedEntryFeatureSource
                 stringIndex);
         boolean equal = true;
         while (equal && srcA.hasNext() && srcB.hasNext()) {
-            final Weighted<EntryFeatureRecord> recA = srcA.read();
-            final Weighted<EntryFeatureRecord> recB = srcB.read();
+            final Weighted<EntryFeature> recA = srcA.read();
+            final Weighted<EntryFeature> recB = srcB.read();
             equal = recA.get().getEntryId() == recB.get().getEntryId()
                     && recA.get().getFeatureId() == recB.get().getFeatureId()
                     && recA.getWeight() == recB.getWeight();

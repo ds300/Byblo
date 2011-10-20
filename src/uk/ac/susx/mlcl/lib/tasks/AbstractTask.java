@@ -52,9 +52,7 @@ public abstract class AbstractTask implements Task {
         // nada
     }
 
-    protected void runTask() throws Exception {
-        // nada
-    }
+    protected abstract void runTask() throws Exception;
 
     protected void finaliseTask() throws Exception {
         // nada

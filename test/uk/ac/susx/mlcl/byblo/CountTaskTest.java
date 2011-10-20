@@ -30,6 +30,7 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.byblo.command.CountEFCommand;
 import uk.ac.susx.mlcl.byblo.io.EntryFeatureSource;
 import java.io.File;
 import java.nio.charset.Charset;
@@ -45,16 +46,16 @@ import static uk.ac.susx.mlcl.TestConstants.*;
  */
 public class CountTaskTest {
 
-    private static final String subject = CountTask.class.getName();
+    private static final String subject = CountEFCommand.class.getName();
 
     private void runWithAPI(File inInst, File outE, File outF, File outEF,
             Charset charset)
             throws Exception {
-        final CountTask countTask = new CountTask();
-        countTask.setInstancesFile(inInst);
+        final CountEFCommand countTask = new CountEFCommand();
+        countTask.setInputFile(inInst);
         countTask.setEntriesFile(outE);
         countTask.setFeaturesFile(outF);
-        countTask.setEntryFeaturesFile(outEF);
+        countTask.setOutputFile(outEF);
         countTask.setCharset(charset);
         countTask.run();
         while (countTask.isExceptionThrown()) {

@@ -229,7 +229,7 @@ public class Lexer implements RandomAccess {
     }
 
     public Lexer(File file, Charset charset) throws FileNotFoundException, NullPointerException, IOException {
-        this(new CharFileChannel( new FileInputStream(file).getChannel(),
+        this(new CharFileChannel(new FileInputStream(file).getChannel(),
                 IOUtil.DEFAULT_CHARSET));
     }
 

@@ -43,7 +43,7 @@ import java.util.Comparator;
  * 
  * @author Hamish Morgan (Hamish.Morgan@sussex.ac.uk)
  */
-public class IntEntry extends AbstractEntry implements Serializable, Cloneable {
+public class IntEntry extends AbstractIndexed implements Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
     private final int value;
@@ -107,7 +107,7 @@ public class IntEntry extends AbstractEntry implements Serializable, Cloneable {
     }
 
     private static final class Serializer
-            extends AbstractEntry.Serializer
+            extends AbstractIndexed.Serializer
             implements Externalizable {
 
         private static final long serialVersionUID = 1;

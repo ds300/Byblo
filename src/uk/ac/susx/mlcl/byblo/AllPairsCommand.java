@@ -52,10 +52,9 @@ import uk.ac.susx.mlcl.byblo.measure.Lp;
 import uk.ac.susx.mlcl.byblo.measure.Proximity;
 import uk.ac.susx.mlcl.byblo.measure.ReversedProximity;
 import uk.ac.susx.mlcl.lib.ObjectIndex;
-import uk.ac.susx.mlcl.byblo.io.WeightedEntryPairRecord;
+import uk.ac.susx.mlcl.byblo.io.EntryPair;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
 import uk.ac.susx.mlcl.lib.io.Sink;
-import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -66,16 +65,17 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
+import uk.ac.susx.mlcl.lib.command.AbstractCommand;
 
 /**
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-@Parameters(
-commandDescription = "Perform all-pair similarity search on the given input frequency files.")
-public class AllPairsTask extends AbstractTask {
+@Parameters(commandDescription = "Perform all-pair similarity search on the given input frequency files.")
+public class AllPairsCommand extends AbstractCommand {
 
-    private static final Log LOG = LogFactory.getLog(AllPairsTask.class);
+    private static final Log LOG = LogFactory.getLog(AllPairsCommand.class);
 
     @Parameter(names = {"-i", "--input"},
                description = "Entry-feature frequency vectors files.",
@@ -153,10 +153,6 @@ public class AllPairsTask extends AbstractTask {
                converter = DoubleConverter.class)
     private double minkP = 2;
 
-    @Override
-    protected void initialiseTask() throws Exception {
-    }
-
     private Map<String, Class<? extends Proximity>> buildMeasureClassLookupTable() throws ClassNotFoundException {
 
         // Map that will store measure aliases to class
@@ -188,7 +184,7 @@ public class AllPairsTask extends AbstractTask {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected void runTask() throws Exception {
+    public void run() throws Exception {
 
         if (LOG.isInfoEnabled()) {
             LOG.info("Running All-Pairs Similarity Search Command.");
@@ -295,9 +291,9 @@ public class AllPairsTask extends AbstractTask {
         // Create a sink object that will act as a recipient for all pairs that
         // are produced by the algorithm.
 
-        final Sink<WeightedEntryPairRecord> sink =
+        final Sink<Weighted<EntryPair>> sink =
                 new WeightedEntryPairSink(outputFile, charset, strIndex,
-                strIndex);
+                                          strIndex);
 
         // Instantiate the all-pairs algorithm as given on the command line.
         ThreadedApssTask apss = new ThreadedApssTask(sourceA, sourceB, sink);
@@ -309,17 +305,17 @@ public class AllPairsTask extends AbstractTask {
         apss.setMeasure(prox);
         apss.setMaxChunkSize(chunkSize);
 
-        List<Predicate<WeightedEntryPairRecord>> pairFilters =
-                new ArrayList<Predicate<WeightedEntryPairRecord>>();
+        List<Predicate<Weighted<EntryPair>>> pairFilters =
+                new ArrayList<Predicate<Weighted<EntryPair>>>();
 
         if (minSimilarity != Double.NEGATIVE_INFINITY)
-            pairFilters.add(WeightedEntryPairRecord.similarityGTE(minSimilarity));
+            pairFilters.add(similarityGTE(minSimilarity));
 
         if (maxSimilarity != Double.POSITIVE_INFINITY)
-            pairFilters.add(WeightedEntryPairRecord.similarityLTE(maxSimilarity));
+            pairFilters.add(similarityLTE(maxSimilarity));
 
         if (!outputIdentityPairs)
-            pairFilters.add(Predicates.not(WeightedEntryPairRecord.identity()));
+            pairFilters.add(Predicates.not(identity()));
 
         if (pairFilters.size() == 1)
             apss.setProducatePair(pairFilters.get(0));
@@ -334,8 +330,36 @@ public class AllPairsTask extends AbstractTask {
             LOG.info("Completed All-Pairs Similarity Search.");
     }
 
-    @Override
-    protected void finaliseTask() throws Exception {
+    public static Predicate<Weighted<EntryPair>> similarityGTE(
+            final double minSimilarity) {
+        return new Predicate<Weighted<EntryPair>>() {
+
+            @Override
+            public boolean apply(Weighted<EntryPair> pair) {
+                return (pair.getWeight() >= minSimilarity);
+            }
+        };
+    }
+
+    public static Predicate<Weighted<EntryPair>> similarityLTE(
+            final double maxSimilarity) {
+        return new Predicate<Weighted<EntryPair>>() {
+
+            @Override
+            public boolean apply(Weighted<EntryPair> pair) {
+                return (pair.getWeight() <= maxSimilarity);
+            }
+        };
+    }
+
+    public static Predicate<Weighted<EntryPair>> identity() {
+        return new Predicate<Weighted<EntryPair>>() {
+
+            @Override
+            public boolean apply(Weighted<EntryPair> input) {
+                return input.get().getEntry1Id() == input.get().getEntry2Id();
+            }
+        };
     }
 
     public static class InputFileValidator implements IParameterValidator {
@@ -398,7 +422,6 @@ public class AllPairsTask extends AbstractTask {
     public String toString() {
         return "AllPairsCommand{"
                 + "usageRequested=" + isUsageRequested()
-                + ", exceptionThrown=" + isExceptionThrown()
                 + ", entryFeaturesFile=" + entryFeaturesFile
                 + ", featuresFile=" + featuresFile
                 + ", entriesFile=" + entriesFile

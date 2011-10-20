@@ -47,7 +47,7 @@ import static uk.ac.susx.mlcl.TestConstants.*;
  */
 public class ChunkTaskTest {
 
-    private static final String subject = ChunkTask.class.getName();
+    private static final String subject = xxxChunkCommand.class.getName();
 
     /**
      * Test of runTask method, of class ChunkTask.
@@ -64,7 +64,7 @@ public class ChunkTaskTest {
         File in = File.createTempFile(getClass().getName(), "in");
         IOUtil.writeAll(in, DEFAULT_CHARSET, str);
 
-        ChunkTask instance = new ChunkTask();
+        xxxChunkCommand instance = new xxxChunkCommand();
         instance.setSrcFile(in);
         instance.setMaxChunkSize(maxChunkSize);
         instance.setChunkFileFactory(fileFactory);
@@ -86,7 +86,7 @@ public class ChunkTaskTest {
     public void testGetSetMaxChunkSize() {
         System.out.println("Testing setMaxChunkSize() and getMaxChunkSize()");
         int maxChunkSize = 1000;
-        ChunkTask instance = new ChunkTask();
+        xxxChunkCommand instance = new xxxChunkCommand();
         instance.setMaxChunkSize(maxChunkSize);
         assertEquals(maxChunkSize, instance.getMaxChunkSize());
     }
@@ -95,7 +95,7 @@ public class ChunkTaskTest {
     public void testGetSetSrcFile() {
         System.out.println("Testing setSrcFile() and getSrcFile()");
         File sourceFile = new File(".");
-        ChunkTask instance = new ChunkTask();
+        xxxChunkCommand instance = new xxxChunkCommand();
         instance.setSrcFile(sourceFile);
         assertEquals(sourceFile, instance.getSrcFile());
     }
@@ -105,7 +105,7 @@ public class ChunkTaskTest {
         System.out.println(
                 "Testing setChunkFileFactory() and getChunkFileFactory()");
         FileFactory chunkFileFactory = new TempFileFactory();
-        ChunkTask instance = new ChunkTask();
+        xxxChunkCommand instance = new xxxChunkCommand();
         instance.setChunkFileFactory(chunkFileFactory);
         assertEquals(chunkFileFactory, instance.getChunkFileFactory());
     }
@@ -114,7 +114,7 @@ public class ChunkTaskTest {
     public void testCLI() throws IOException {
         System.out.println("Testing command line usage.");
         File tmp = File.createTempFile(getClass().getName(), "");
-        ChunkTask instance = new ChunkTask();
+        xxxChunkCommand instance = new xxxChunkCommand();
         String[] args = {"-i", tmp.toString()};
         JCommander jc = new JCommander();
         jc.addObject(instance);

@@ -30,6 +30,7 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.lib.tasks.MergeTask;
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.IStringConverterFactory;
 import com.beust.jcommander.JCommander;
@@ -40,13 +41,13 @@ import java.nio.charset.Charset;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ResourceBundle;
+import uk.ac.susx.mlcl.lib.command.AbstractCommand;
 
 /**
  *
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
-public class Byblo {
+public class Main {
 
     @Parameter(names = {"-h", "--help"},
                description = "Display this message")
@@ -61,17 +62,17 @@ public class Byblo {
         sort(ExternalSortTask.class),
         merge(MergeTask.class),
         knn(ExternalKnnTask.class),
-        allpairs(AllPairsTask.class),
-        count(ExternalCountTask.class),
+        allpairs(AllPairsCommand.class),
+        count(ExternalCountEFCommand.class),
         filter(FilterCommand.class);
 
-        private Class<? extends Task> taskClass;
+        private Class<? extends AbstractCommand> taskClass;
 
-        private Command(Class<? extends Task> taskClass) {
+        private Command(Class<? extends AbstractCommand> taskClass) {
             this.taskClass = taskClass;
         }
 
-        public Class<? extends Task> getTaskClass() {
+        public Class<? extends AbstractCommand> getTaskClass() {
             return taskClass;
         }
     }
@@ -81,7 +82,7 @@ public class Byblo {
         if (args == null)
             throw new NullPointerException();
 
-        Byblo byblo = new Byblo();
+        Main byblo = new Main();
 
         JCommander jc = new JCommander();
         jc.setProgramName("byblo");
@@ -89,11 +90,11 @@ public class Byblo {
 
         jc.addObject(byblo);
 
-        EnumMap<Command, Task> tasks =
-                new EnumMap<Command, Task>(Command.class);
+        EnumMap<Command, AbstractCommand> tasks =
+                new EnumMap<Command, AbstractCommand>(Command.class);
 
         for (Command c : Command.values()) {
-            Task t = c.getTaskClass().newInstance();
+            AbstractCommand t = c.getTaskClass().newInstance();
             jc.addCommand(c.name(), t);
             tasks.put(c, t);
         }
@@ -111,12 +112,8 @@ public class Byblo {
 
             } else {
 
-                Task t = tasks.get(Command.valueOf(jc.getParsedCommand()));
+                AbstractCommand t = tasks.get(Command.valueOf(jc.getParsedCommand()));
                 t.run();
-
-                while (t.isExceptionThrown()) {
-                    t.throwException();
-                }
             }
 
         } catch (ParameterException ex) {

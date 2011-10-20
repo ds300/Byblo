@@ -31,72 +31,26 @@
 package uk.ac.susx.mlcl.lib.tasks;
 
 import uk.ac.susx.mlcl.lib.io.IOUtil;
-import uk.ac.susx.mlcl.lib.tasks.AbstractTask;
-import java.nio.charset.Charset;
-import java.util.Comparator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import uk.ac.susx.mlcl.lib.Checks;
 import uk.ac.susx.mlcl.lib.io.Sink;
 import uk.ac.susx.mlcl.lib.io.Source;
 
 /**
  * Copy a source file to a destination.
  * 
+ * @param <T> 
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-public class CopyTask<T> extends AbstractTask {
+public class CopyTask<T> extends AbstractPipeTask<T> {
 
     private static final Log LOG = LogFactory.getLog(CopyTask.class);
 
-    private Source<T> source;
-
-    private Sink<T> sink;
-
-    private Comparator<T> comparator = null;
-
-    public CopyTask(Source<T> source, Sink<T> sink, Comparator<T> comparator) {
-        setComparator(comparator);
-        setSource(source);
-        setSink(sink);
-    }
-
     public CopyTask(Source<T> source, Sink<T> sink) {
-        setSource(source);
-        setSink(sink);
+        super(source, sink);
     }
 
     public CopyTask() {
-    }
-
-    public final Comparator<T> getComparator() {
-        return comparator;
-    }
-
-    /**
-     * If set to null the use the natural ordering of the items.
-     * @param comparator 
-     */
-    public final void setComparator(Comparator<T> comparator) {
-        this.comparator = comparator;
-    }
-
-    public final Sink<T> getSink() {
-        return sink;
-    }
-
-    public final void setSink(Sink<T> sink) {
-        Checks.checkNotNull(sink);
-        this.sink = sink;
-    }
-
-    public final Source<T> getSource() {
-        return source;
-    }
-
-    public final void setSource(Source<T> sourceA) {
-        Checks.checkNotNull(sourceA);
-        this.source = sourceA;
     }
 
     @Override

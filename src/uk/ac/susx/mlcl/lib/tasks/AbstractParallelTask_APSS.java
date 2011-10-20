@@ -30,6 +30,7 @@
  */
 package uk.ac.susx.mlcl.lib.tasks;
 
+import uk.ac.susx.mlcl.lib.command.AbstractParallelCommand;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -45,7 +46,7 @@ import java.util.concurrent.Semaphore;
  * @deprecated work in progress (or not in progress)
  */
 @Deprecated
-public abstract class AbstractParallelTask_APSS extends AbstractParallelTask {
+public abstract class AbstractParallelTask_APSS extends AbstractParallelCommand {
 
     private int taskQueueSize = DEFAULT_NUM_THREADS;
 

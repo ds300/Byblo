@@ -137,5 +137,31 @@ public class TempFileFactory implements FileFactory {
         return DEFAULT_DIRECTORY.toString();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final TempFileFactory other = (TempFileFactory) obj;
+        if ((this.prefix == null) ? (other.prefix != null) : !this.prefix.equals(other.prefix))
+            return false;
+        if ((this.suffix == null) ? (other.suffix != null) : !this.suffix.equals(other.suffix))
+            return false;
+        if (this.directory != other.directory && (this.directory == null || !this.directory.equals(other.directory)))
+            return false;
+        return true;
+    }
 
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 53 * hash + (this.prefix != null ? this.prefix.hashCode() : 0);
+        hash = 53 * hash + (this.suffix != null ? this.suffix.hashCode() : 0);
+        hash = 53 * hash + (this.directory != null ? this.directory.hashCode() : 0);
+        return hash;
+    }
+
+
+    
 }

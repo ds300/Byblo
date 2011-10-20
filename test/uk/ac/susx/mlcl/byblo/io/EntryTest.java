@@ -83,14 +83,14 @@ public class EntryTest {
     }
 
     public void testRandomAccess(File file) throws FileNotFoundException, IOException {
-        final Map<Tell, WeightedEntryRecord> hist =
-                new HashMap<Tell, WeightedEntryRecord>();
+        final Map<Tell, Entry> hist =
+                new HashMap<Tell, Entry>();
 
         WeightedEntrySource src = new WeightedEntrySource(file, DEFAULT_CHARSET);
         {
             while (src.hasNext()) {
                 final Tell pos = src.position();
-                final WeightedEntryRecord record = src.read();
+                final Entry record = src.read();
 
                 System.out.println(pos.toString() + ": " + record.toString(src.
                         getStringIndex()));
@@ -106,7 +106,7 @@ public class EntryTest {
 
             for (int i = 0; i < 10; i++) {
                 final Tell pos = positions.get(rand.nextInt(positions.size()));
-                final WeightedEntryRecord expected = hist.get(pos);
+                final Entry expected = hist.get(pos);
 
                 System.out.println("expected tell: " + pos);
                 System.out.println("expected: " + expected.toString(src.
@@ -117,7 +117,7 @@ public class EntryTest {
                 assertTrue(src.hasNext());
                 assertEquals(pos, src.position());
 
-                WeightedEntryRecord actual = src.read();
+                Entry actual = src.read();
                 System.out.println("actual tell: " + src.position());
                 System.out.println("actual: " + actual.toString(src.
                         getStringIndex()));

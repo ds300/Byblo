@@ -30,6 +30,8 @@
  */
 package uk.ac.susx.mlcl.byblo;
 
+import uk.ac.susx.mlcl.byblo.command.CountEFCommand;
+import uk.ac.susx.mlcl.lib.tasks.MergeTask;
 import uk.ac.susx.mlcl.lib.tasks.DeleteTask;
 import uk.ac.susx.mlcl.lib.tasks.CopyTask;
 import uk.ac.susx.mlcl.lib.tasks.SortTask;
@@ -40,7 +42,7 @@ import uk.ac.susx.mlcl.lib.Checks;
 import uk.ac.susx.mlcl.lib.io.FileFactory;
 import uk.ac.susx.mlcl.lib.io.IOUtil;
 import uk.ac.susx.mlcl.lib.io.TempFileFactory;
-import uk.ac.susx.mlcl.lib.tasks.AbstractParallelTask;
+import uk.ac.susx.mlcl.lib.command.AbstractParallelCommand;
 import uk.ac.susx.mlcl.lib.tasks.Task;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -52,13 +54,12 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
 import uk.ac.susx.mlcl.byblo.io.EntryFeatureSink;
-import uk.ac.susx.mlcl.byblo.io.WeightedEntryRecord;
+import uk.ac.susx.mlcl.byblo.io.Entry;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntrySink;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntrySource;
-import uk.ac.susx.mlcl.byblo.io.WeightedFeatureRecord;
+import uk.ac.susx.mlcl.byblo.io.Feature;
 import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSink;
 import uk.ac.susx.mlcl.byblo.io.WeightedFeatureSource;
-import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureRecord;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureSink;
 import uk.ac.susx.mlcl.byblo.io.WeightedEntryFeatureSource;
 import uk.ac.susx.mlcl.lib.ObjectIndex;
@@ -71,9 +72,9 @@ import uk.ac.susx.mlcl.lib.io.AbstractTSVSource;
  */
 @Parameters(
 commandDescription = "Freqency count a structured input instance file.")
-public class ExternalCountTask extends AbstractParallelTask {
+public class ExternalCountCommand1 extends AbstractParallelCommand {
 
-    private static final int DEFAULT_MAX_CHUNK_SIZE = ChunkTask.DEFAULT_MAX_CHUNK_SIZE;
+    private static final int DEFAULT_MAX_CHUNK_SIZE = xxxChunkCommand.DEFAULT_MAX_CHUNK_SIZE;
 
     @Parameter(names = {"-C", "--chunk-size"},
                description = "Number of lines per work unit. Lrger value increase performance and memory usage.")
@@ -157,7 +158,7 @@ public class ExternalCountTask extends AbstractParallelTask {
 
     private Queue<File> mergeEntryFeatureQueue;
 
-    public ExternalCountTask(final File instancesFile, final File featuresFile,
+    public ExternalCountCommand1(final File instancesFile, final File featuresFile,
             final File entriesFile, final File contextsFile, Charset charset,
             int maxChunkSize) {
         this(instancesFile, featuresFile, entriesFile, contextsFile);
@@ -165,7 +166,7 @@ public class ExternalCountTask extends AbstractParallelTask {
         setMaxChunkSize(maxChunkSize);
     }
 
-    public ExternalCountTask(
+    public ExternalCountCommand1(
             final File instancesFile, final File entryFeaturesFile,
             final File entriesFile, final File featuresFile) {
         setInstancesFile(instancesFile);
@@ -174,7 +175,7 @@ public class ExternalCountTask extends AbstractParallelTask {
         setFeaturesFile(featuresFile);
     }
 
-    public ExternalCountTask() {
+    public ExternalCountCommand1() {
         super();
     }
 
@@ -262,11 +263,11 @@ public class ExternalCountTask extends AbstractParallelTask {
 
         BlockingQueue<File> chunkQueue = new ArrayBlockingQueue<File>(2);
 
-        ChunkTask chunkTask = new ChunkTask(getInputFile(), getCharset(),
+        xxxChunkCommand chunkTask = new xxxChunkCommand(getInputFile(), getCharset(),
                 getMaxChunkSize());
         chunkTask.setDstFileQueue(chunkQueue);
         chunkTask.setChunkFileFactory(tempFileFactory);
-        Future<ChunkTask> chunkFuture = submitTask(chunkTask);
+        Future<xxxChunkCommand> chunkFuture = submitTask(chunkTask);
 
         // Immidiately poll the chunk task so we can start handling other
         // completed tasks
@@ -291,7 +292,7 @@ public class ExternalCountTask extends AbstractParallelTask {
                 File chunk_entryFeaturesFile = new File(chunk.getParentFile(),
                         chunk.getName() + ENTRY_FEATURES_FILE_SUFFIX);
 
-                submitTask(new CountTask(chunk, chunk_entryFeaturesFile,
+                submitTask(new CountEFCommand(chunk, chunk_entryFeaturesFile,
                         chunk_entriesFile, chunk_featuresFile, getCharset()));
             }
 
@@ -311,14 +312,14 @@ public class ExternalCountTask extends AbstractParallelTask {
     protected void handleCompletedTask(Task task) throws Exception {
         task.throwException();
 
-        if (task.getClass().equals(CountTask.class)) {
+        if (task.getClass().equals(CountEFCommand.class)) {
 
-            CountTask countTask = (CountTask) task;
+            CountEFCommand countTask = (CountEFCommand) task;
 
             submitTask(new SortTask(countTask.getEntriesFile(),
                     countTask.getEntriesFile(), getCharset(), comparator));
-            submitTask(new SortTask(countTask.getEntryFeaturesFile(),
-                    countTask.getEntryFeaturesFile(), getCharset(), comparator));
+            submitTask(new SortTask(countTask.getOutputFile(),
+                    countTask.getOutputFile(), getCharset(), comparator));
             submitTask(new SortTask(countTask.getFeaturesFile(),
                     countTask.getFeaturesFile(), getCharset(), comparator));
 
@@ -423,7 +424,7 @@ public class ExternalCountTask extends AbstractParallelTask {
 //        }
 //    }
 //    
-    protected Future<MergeTask<WeightedEntryFeatureRecord>> queueEntryFeatureMergeTask(
+    protected Future<MergeTask<WeightedEntryFeature>> queueEntryFeatureMergeTask(
             File file, Queue<File> q) throws IOException {
         q.add(file);
 
@@ -449,8 +450,8 @@ public class ExternalCountTask extends AbstractParallelTask {
             WeightedEntryFeatureSink sink = new WeightedEntryFeatureSink(
                     sinkFile, charset, entryIndex, featureIndex);
 
-            MergeTask<WeightedEntryFeatureRecord> mergeTask =
-                    new MergeTask<WeightedEntryFeatureRecord>(srcA, srcB, sink,
+            MergeTask<WeightedEntryFeature> mergeTask =
+                    new MergeTask<WeightedEntryFeature>(srcA, srcB, sink,
                     null, charset);
             return submitTask(mergeTask);
         } else {
@@ -458,7 +459,7 @@ public class ExternalCountTask extends AbstractParallelTask {
         }
     }
 
-    protected Future<MergeTask<WeightedEntryRecord>> queueEntryMergeTask(
+    protected Future<MergeTask<Entry>> queueEntryMergeTask(
             File file, Queue<File> q) throws IOException {
         q.add(file);
 
@@ -483,8 +484,8 @@ public class ExternalCountTask extends AbstractParallelTask {
             WeightedEntrySink sink = new WeightedEntrySink(
                     sinkFile, charset, entryIndex);
 
-            MergeTask<WeightedEntryRecord> mergeTask =
-                    new MergeTask<WeightedEntryRecord>(srcA, srcB, sink,
+            MergeTask<Entry> mergeTask =
+                    new MergeTask<Entry>(srcA, srcB, sink,
                     null, charset);
             return submitTask(mergeTask);
         } else {
@@ -492,7 +493,7 @@ public class ExternalCountTask extends AbstractParallelTask {
         }
     }
 
-    protected Future<MergeTask<WeightedFeatureRecord>> queueFeatureMergeTask(
+    protected Future<MergeTask<Feature>> queueFeatureMergeTask(
             File file, Queue<File> q) throws IOException {
         q.add(file);
 
@@ -517,8 +518,8 @@ public class ExternalCountTask extends AbstractParallelTask {
             WeightedFeatureSink sink = new WeightedFeatureSink(
                     sinkFile, charset, featureIndex);
 
-            MergeTask<WeightedFeatureRecord> mergeTask =
-                    new MergeTask<WeightedFeatureRecord>(srcA, srcB, sink,
+            MergeTask<Feature> mergeTask =
+                    new MergeTask<Feature>(srcA, srcB, sink,
                     null, charset);
             return submitTask(mergeTask);
         } else {

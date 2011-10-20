@@ -38,7 +38,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import uk.ac.susx.mlcl.lib.io.Sink;
-import uk.ac.susx.mlcl.lib.io.Weighted;
+import uk.ac.susx.mlcl.lib.collect.Weighted;
 
 /**
  * An <tt>WeightedEntryFeatureSink</tt> object is used to store 
@@ -76,8 +76,8 @@ import uk.ac.susx.mlcl.lib.io.Weighted;
  * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
  */
 public class WeightedEntryFeatureSink
-        extends AbstractTSVSink<Weighted<EntryFeatureRecord>>
-        implements Sink<Weighted<EntryFeatureRecord>> {
+        extends AbstractTSVSink<Weighted<EntryFeature>>
+        implements Sink<Weighted<EntryFeature>> {
 
     private final DecimalFormat f = new DecimalFormat("###0.0#####;-###0.0#####");
 
@@ -87,7 +87,7 @@ public class WeightedEntryFeatureSink
 
     private boolean compactFormatEnabled = true;
 
-    private Weighted<EntryFeatureRecord> previousRecord = null;
+    private Weighted<EntryFeature> previousRecord = null;
 
     public WeightedEntryFeatureSink(File file, Charset charset,
             ObjectIndex<String> entryIndex, ObjectIndex<String> featureIndex)
@@ -132,14 +132,14 @@ public class WeightedEntryFeatureSink
     }
 
     @Override
-    public void write(Weighted<EntryFeatureRecord> record) throws IOException {
+    public void write(Weighted<EntryFeature> record) throws IOException {
         if (isCompactFormatEnabled())
             writeCompact(record);
         else
             writeVerbose(record);
     }
 
-    private void writeVerbose(Weighted<EntryFeatureRecord> record) throws IOException {
+    private void writeVerbose(Weighted<EntryFeature> record) throws IOException {
         writeEntry(record.get().getEntryId());
         writeValueDelimiter();
 
@@ -150,7 +150,7 @@ public class WeightedEntryFeatureSink
         writeRecordDelimiter();
     }
 
-    private void writeCompact(final Weighted<EntryFeatureRecord> record) throws IOException {
+    private void writeCompact(final Weighted<EntryFeature> record) throws IOException {
         if (previousRecord == null) {
             writeEntry(record.get().getEntryId());
         } else if (previousRecord.get().getEntryId() != record.get().getEntryId()) {

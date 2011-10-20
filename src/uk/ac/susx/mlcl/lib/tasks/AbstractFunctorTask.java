@@ -30,48 +30,54 @@
  */
 package uk.ac.susx.mlcl.lib.tasks;
 
-import java.io.Serializable;
-import java.util.Comparator;
+import uk.ac.susx.mlcl.lib.Checks;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.io.Sink;
+import uk.ac.susx.mlcl.lib.io.Source;
 
 /**
- * <p>Comparator decorator that reverses the operands.</p>
- *
- * <p>When used with a sorting operation this will typically reverse the sort
- * from ascending, to descending.</p>
- *
- * <p>Serialization is supported if, and only i, the encapsulated
- * {@link Comparator} is also serializable.</p>
- *
- * @param <T>
- * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
+ * Task that takes a single input file and sorts it according to some comparator,
+ * then writes the results to an output file.
+ * 
+ * @param <X> 
+ * @param <Y> 
+ * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-public class ReverseComparator<T>
-        implements Comparator<T>, Serializable {
+public abstract class AbstractFunctorTask<X,Y> extends AbstractTask {
 
-    public static final long serialVersionUID = 1L;
+    private static final Log LOG = LogFactory.getLog(AbstractFunctorTask.class);
 
-    private final Comparator<T> inner;
+    private Source<X> source;
 
-    public ReverseComparator(final Comparator<T> inner) {
-        this.inner = inner;
+    private Sink<Y> sink;
+    
+    public AbstractFunctorTask(Source<X> source, Sink<Y> sink) {
+        setSource(source);
+        setSink(sink);
+    }
+
+    public AbstractFunctorTask() {
+    }
+
+    public final Sink<Y> getSink() {
+        return sink;
+    }
+
+    public final void setSink(Sink<Y> sink) {
+        Checks.checkNotNull(sink);
+        this.sink = sink;
+    }
+
+    public final Source<X> getSource() {
+        return source;
+    }
+
+    public final void setSource(Source<X> source) {
+        Checks.checkNotNull(source);
+        this.source = source;
     }
 
     @Override
-    public int compare(final T o1, final T o2) {
-        return inner.compare(o2, o1);
-    }
-
-    public Comparator<T> getInner() {
-        return inner;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(getClass().getSimpleName());
-        builder.append('{');
-        builder.append("inner=").append(inner);
-        builder.append('}');
-        return builder.toString();
-    }
+    protected abstract void runTask() throws Exception;
 }

@@ -30,37 +30,53 @@
  */
 package uk.ac.susx.mlcl.lib.tasks;
 
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
+import uk.ac.susx.mlcl.lib.Checks;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import uk.ac.susx.mlcl.lib.io.Sink;
+import uk.ac.susx.mlcl.lib.io.Source;
 
 /**
- *
- * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk&gt;
+ * Task that takes a single input file and sorts it according to some comparator,
+ * then writes the results to an output file.
+ * 
+ * @param <T> 
+ * @author Hamish Morgan &lt;hamish.morgan@sussex.ac.uk%gt;
  */
-@Parameters()
-public abstract class Command {
+public abstract class AbstractPipeTask<T> extends AbstractTask {
 
-    private static final Log LOG = LogFactory.getLog(Command.class);
+    private static final Log LOG = LogFactory.getLog(AbstractPipeTask.class);
 
-    @Parameter(names = {"-h", "--help"},
-               description = "Display this help message.")
-    private boolean usageRequested = false;
-    
-    public Command() {
+    private Source<T> source;
+
+    private Sink<T> sink;
+
+    public AbstractPipeTask(Source<T> source, Sink<T> sink) {
+        setSource(source);
+        setSink(sink);
     }
 
-    public final boolean isUsageRequested() {
-        return usageRequested;
+    public AbstractPipeTask() {
     }
 
-    public abstract void run() throws Exception;
-   
+    public final Sink<T> getSink() {
+        return sink;
+    }
+
+    public final void setSink(Sink<T> sink) {
+        Checks.checkNotNull(sink);
+        this.sink = sink;
+    }
+
+    public final Source<T> getSource() {
+        return source;
+    }
+
+    public final void setSource(Source<T> source) {
+        Checks.checkNotNull(source);
+        this.source = source;
+    }
+
     @Override
-    public String toString() {
-        return "AbstractTask{"
-                + "usageRequested=" + isUsageRequested()
-                + '}';
-    }
+    protected abstract void runTask() throws Exception;
 }
